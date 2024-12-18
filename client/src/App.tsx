@@ -1,4 +1,11 @@
 import React, { useState } from "react";
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+	useNavigate,
+} from "react-router-dom";
 import Navigation from "./components/layout/Navigation";
 import ChatList from "./components/chat/ChatList";
 import ChatWindow from "./components/chat/ChatWindow";
@@ -6,9 +13,11 @@ import GroupList from "./components/groups/GroupList";
 import GroupChat from "./components/groups/GroupChat";
 import FriendRequestList from "./components/friends/FriendRequestList";
 import LoginForm from "./components/auth/LoginForm";
+import SignupForm from "./components/auth/SignupForm";
 import { User, Message, Group, FriendRequest } from "./types";
 
-function App() {
+function AppContent() {
+	const navigate = useNavigate();
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [activeTab, setActiveTab] = useState<
@@ -175,115 +184,169 @@ function App() {
 		setIsAuthenticated(true);
 	};
 
-	if (!isAuthenticated) {
-		return <LoginForm onLogin={handleLogin} onSwitchToRegister={() => {}} />;
-	}
+	const handleSignup = (name: string, email: string, password: string) => {
+		// Handle signup logic
+		setIsAuthenticated(true);
+	};
 
 	return (
-		<div className="flex h-screen bg-white">
-			<Navigation
-				activeTab={activeTab}
-				onTabChange={(tab) => {
-					setActiveTab(tab);
-					setActiveChat(null);
-					setActiveGroup(null);
-				}}
-				onLogout={() => setIsAuthenticated(false)}
+		<Routes>
+			<Route
+				path="/"
+				element={
+					!isAuthenticated ? (
+						<LoginForm onLogin={handleLogin} />
+					) : (
+						<Navigate to="/chat" />
+					)
+				}
 			/>
-			{activeTab === "chats" && (
-				<>
-					<ChatList
-						chats={mockChats}
-						contacts={mockContacts}
-						onChatSelect={handleChatSelect}
-					/>
-					{activeChat ? (
-						<ChatWindow
-							currentUser={mockUser}
-							recipient={activeChat}
-							messageList={getFilteredMessages("chat", activeChat.userId)}
-							onSendMessage={(content) => {
-								console.log("Sending message:", content);
-							}}
-							onEditMessage={(messageId, content) => {
-								console.log("Editing message:", messageId, content);
-							}}
-							onDeleteMessage={(messageId) => {
-								console.log("Deleting message:", messageId);
-							}}
+			<Route
+				path="/signup"
+				element={
+					!isAuthenticated ? (
+						<SignupForm
+							onSignup={handleSignup}
+							onSwitchToLogin={() => navigate('/')}
 						/>
 					) : (
-						<div className="flex-1 flex items-center justify-center bg-gray-50">
-							<div className="text-center">
-								<h3 className="text-lg font-medium text-gray-900">
-									Welcome to Chat
-								</h3>
-								<p className="mt-1 text-sm text-gray-500">
-									Select a conversation to start messaging
-								</p>
-							</div>
-						</div>
-					)}
-				</>
-			)}
+						<Navigate to="/chat" />
+					)
+				}
+			/>
+			<Route
+				path="/chat"
+				element={
+					isAuthenticated ? (
+						<div className="flex h-screen bg-white">
+							<Navigation
+								activeTab={activeTab}
+								onTabChange={(tab) => {
+									setActiveTab(tab);
+									setActiveChat(null);
+									setActiveGroup(null);
+								}}
+								onLogout={() => setIsAuthenticated(false)}
+							/>
+							{activeTab === "chats" && (
+								<>
+									<ChatList
+										chats={mockChats}
+										contacts={mockContacts}
+										onChatSelect={handleChatSelect}
+									/>
+									{activeChat ? (
+										<ChatWindow
+											currentUser={mockUser}
+											recipient={activeChat}
+											messageList={getFilteredMessages(
+												"chat",
+												activeChat.userId
+											)}
+											onSendMessage={(content) => {
+												console.log("Sending message:", content);
+											}}
+											onEditMessage={(messageId, content) => {
+												console.log("Editing message:", messageId, content);
+											}}
+											onDeleteMessage={(messageId) => {
+												console.log("Deleting message:", messageId);
+											}}
+										/>
+									) : (
+										<div className="flex-1 flex items-center justify-center bg-gray-50">
+											<div className="text-center">
+												<h3 className="text-lg font-medium text-gray-900">
+													Welcome to Chat
+												</h3>
+												<p className="mt-1 text-sm text-gray-500">
+													Select a conversation to start messaging
+												</p>
+											</div>
+										</div>
+									)}
+								</>
+							)}
 
-			{activeTab === "groups" && (
-				<>
-					<GroupList
-						groups={groups}
-						contacts={mockContacts}
-						onGroupSelect={handleGroupSelect}
-						onCreateGroup={handleCreateGroup}
-					/>
-					{activeGroup ? (
-						<GroupChat
-							group={activeGroup}
-							messages={getFilteredMessages("group", activeGroup.groupId)}
-							currentUser={mockUser}
-							onSendMessage={(content, groupId) => {
-								console.log("Sending group message:", content, groupId);
-							}}
-							onAddMember={() => {}}
-							onOpenSettings={() => {}}
-							onEditMessage={function (
-								messageId: number,
-								content: string
-							): void {
-								throw new Error("Function not implemented.");
-							}}
-							onDeleteMessage={function (messageId: number): void {
-								throw new Error("Function not implemented.");
-							}}
-						/>
-					) : (
-						<div className="flex-1 flex items-center justify-center bg-gray-50">
-							<div className="text-center">
-								<h3 className="text-lg font-medium text-gray-900">
-									Welcome to Groups
-								</h3>
-								<p className="mt-1 text-sm text-gray-500">
-									Select a group to start messaging
-								</p>
-							</div>
+							{activeTab === "groups" && (
+								<>
+									<GroupList
+										groups={groups}
+										contacts={mockContacts}
+										onGroupSelect={handleGroupSelect}
+										onCreateGroup={handleCreateGroup}
+									/>
+									{activeGroup ? (
+										<GroupChat
+											group={activeGroup}
+											messages={getFilteredMessages(
+												"group",
+												activeGroup.groupId
+											)}
+											currentUser={mockUser}
+											onSendMessage={(content, groupId) => {
+												console.log(
+													"Sending group message:",
+													content,
+													groupId
+												);
+											}}
+											onAddMember={() => {}}
+											onOpenSettings={() => {}}
+											onEditMessage={function (
+												messageId: number,
+												content: string
+											): void {
+												throw new Error("Function not implemented.");
+											}}
+											onDeleteMessage={function (messageId: number): void {
+												throw new Error("Function not implemented.");
+											}}
+										/>
+									) : (
+										<div className="flex-1 flex items-center justify-center bg-gray-50">
+											<div className="text-center">
+												<h3 className="text-lg font-medium text-gray-900">
+													Welcome to Groups
+												</h3>
+												<p className="mt-1 text-sm text-gray-500">
+													Select a group to start messaging
+												</p>
+											</div>
+										</div>
+									)}
+								</>
+							)}
+							{activeTab === "requests" && (
+								<FriendRequestList
+									requests={mockRequests}
+									onAccept={(requestId) => {
+										console.log("Accepting request:", requestId);
+									}}
+									onReject={(requestId) => {
+										console.log("Rejecting request:", requestId);
+									}}
+									onSendRequest={(email) => {
+										console.log("Sending friend request to:", email);
+									}}
+								/>
+							)}
 						</div>
-					)}
-				</>
-			)}
-			{activeTab === "requests" && (
-				<FriendRequestList
-					requests={mockRequests}
-					onAccept={(requestId) => {
-						console.log("Accepting request:", requestId);
-					}}
-					onReject={(requestId) => {
-						console.log("Rejecting request:", requestId);
-					}}
-					onSendRequest={(email) => {
-						console.log("Sending friend request to:", email);
-					}}
-				/>
-			)}
-		</div>
+					) : (
+						<Navigate to="/" />
+					)
+				}
+			/>
+		</Routes>
 	);
 }
+
+function App() {
+	return (
+		<Router>
+			<AppContent />
+		</Router>
+	);
+}
+
 export default App;

@@ -47,21 +47,21 @@ function App() {
 			senderId: 1,
 			recipientId: 2,
 			messageContent: "Hey, how are you?",
-			sentAt: new Date(Date.now() - 3600000),
+			sentAt: new Date().toISOString(),
 		},
 		{
 			messageId: 2,
 			senderId: 2,
 			recipientId: 1,
 			messageContent: "I'm doing great! How about you?",
-			sentAt: new Date(Date.now() - 3000000),
+			sentAt: new Date(Date.now() - 3000000).toISOString(),
 		},
 		{
 			messageId: 3,
 			senderId: 1,
 			groupId: 1,
 			messageContent: "Hello team!",
-			sentAt: new Date(Date.now() - 2400000),
+			sentAt: new Date(Date.now() - 2400000).toISOString(),
 		},
 	];
 
@@ -201,7 +201,7 @@ function App() {
 						<ChatWindow
 							currentUser={mockUser}
 							recipient={activeChat}
-							messages={getFilteredMessages("chat", activeChat.userId)}
+							messageList={getFilteredMessages("chat", activeChat.userId)}
 							onSendMessage={(content) => {
 								console.log("Sending message:", content);
 							}}
@@ -245,6 +245,15 @@ function App() {
 							}}
 							onAddMember={() => {}}
 							onOpenSettings={() => {}}
+							onEditMessage={function (
+								messageId: number,
+								content: string
+							): void {
+								throw new Error("Function not implemented.");
+							}}
+							onDeleteMessage={function (messageId: number): void {
+								throw new Error("Function not implemented.");
+							}}
 						/>
 					) : (
 						<div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -277,5 +286,4 @@ function App() {
 		</div>
 	);
 }
-
 export default App;

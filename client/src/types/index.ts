@@ -4,7 +4,7 @@ export interface User {
 	email: string;
 	profilePic?: string;
 	createdAt: Date;
-	status?: "online" | "offline" | "away";
+	status?: "online" | "offline";
 }
 
 export interface Message {
@@ -38,6 +38,6 @@ export interface FriendRequest {
 	requestId: number;
 	senderId: number;
 	recipientId: number;
-	status: "pending" | "accepted" | "rejected";
+	status: "pending" | "accepted";
 	createdAt: Date;
 }

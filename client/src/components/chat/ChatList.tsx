@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, Plus, Search } from "lucide-react";
 import NewChatButton from "./NewChatButton";
 import NewChatModal from "./NewChatModal";
 import SearchInput from "../common/SearchInput";
+import { useSignalR } from "../../services/SignalRService";
 
 const ChatList = ({
 	chats = [],
@@ -15,6 +16,31 @@ const ChatList = ({
 }) => {
 	const [showNewChatModal, setShowNewChatModal] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const signalRConnection = useSignalR("http://localhost:5173/chatHub");
+
+	useEffect(() => {
+		if (signalRConnection) {
+			signalRConnection.start().then(() => {
+				console.log("Connected to SignalR");
+
+				signalRConnection.on("UserConnected", (userId) => {
+					console.log(`${userId} connected`);
+				});
+
+				signalRConnection.on("UserDisconnected", (userId) => {
+					console.log(`${userId} disconnected`);
+				});
+
+				signalRConnection.on("ReceiveOnlineUsers", (users) => {
+					console.log("Online users: ", users);
+				});
+			});
+
+			return () => {
+				signalRConnection.stop();
+			};
+		}
+	}, [signalRConnection]);
 
 	const filteredChats = chats.filter(
 		(chat) =>

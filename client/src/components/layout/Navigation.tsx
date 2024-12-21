@@ -1,5 +1,6 @@
-import React from "react";
+import signalR from "@microsoft/signalr";
 import { MessageSquare, Users, UserPlus, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface NavigationProps {
 	activeTab: "chats" | "groups" | "requests" | "settings";
@@ -12,6 +13,21 @@ export default function Navigation({
 	onTabChange,
 	onLogout,
 }: NavigationProps) {
+	const navigate = useNavigate();
+
+	const handleLogout = () => {
+		localStorage.removeItem("token");
+
+		const connection = new signalR.HubConnectionBuilder()
+			.withUrl("http://localhost:5271/chatHub")
+			.build();
+		if (connection) {
+			connection.stop();
+		}
+		onLogout();
+		navigate("/login");
+	};
+
 	return (
 		<nav className="fixed bottom-0 left-0 w-full md:relative md:w-20 bg-indigo-600 flex md:flex-col justify-between items-center p-2 md:p-4 md:h-screen">
 			{/* Main Navigation Items */}
@@ -55,7 +71,7 @@ export default function Navigation({
 
 			{/* Logout Button */}
 			<button
-				onClick={onLogout}
+				onClick={handleLogout}
 				className="p-2 md:p-3 text-white hover:bg-indigo-700/50 rounded-xl transition-colors duration-200 ease-in-out"
 				aria-label="Logout"
 			>

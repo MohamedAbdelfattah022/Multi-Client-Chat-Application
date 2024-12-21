@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import { authApi } from "../../services/api";
 
 interface LoginFormProps {
 	onLogin: (email: string, password: string) => void;
@@ -11,13 +12,19 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 	const [password, setPassword] = useState("");
 	const navigate = useNavigate();
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		onLogin(email, password);
+		try {
+			const token = await authApi.login(email, password);
+			localStorage.setItem("token", token);
+			onLogin(email, password);
+		} catch (error) {
+			console.error("Login failed:", error);
+		}
 	};
 
 	const handleSignupRedirect = () => {
-		navigate('/signup');
+		navigate("/signup");
 	};
 
 	return (

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Image, Edit2, Trash2 } from "lucide-react";
 import { Message, User } from "../../types";
+import { useSignalR } from "../../services/SignalRService";
 
 interface ChatWindowProps {
 	currentUser: User;
@@ -27,6 +28,49 @@ export default function ChatWindow({
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const signalRConnection = useSignalR("http://localhost:5173/chatHub");
+
+	useEffect(() => {
+		if (signalRConnection) {
+			signalRConnection.start().then(() => {
+				console.log("Connected to SignalR");
+
+				signalRConnection.on("ReceiveMessage", (sender, message) => {
+					console.log("Message received from: ", sender);
+					onSendMessage(message);
+				});
+
+				signalRConnection.on("ReceivePrivateMessage", (sender, message) => {
+					console.log("Private message from: ", sender);
+					onSendMessage(message);
+				});
+			});
+
+			return () => {
+				signalRConnection.stop();
+			};
+		}
+	}, [signalRConnection]);
+
+	const sendMessage = async (content: string) => {
+		if (signalRConnection) {
+			await signalRConnection.invoke(
+				"SendMessageToGroup",
+				recipient.userId,
+				content
+			);
+		}
+	};
+
+	const sendPrivateMessage = async (content: string) => {
+		if (signalRConnection) {
+			await signalRConnection.invoke(
+				"SendPrivateMessage",
+				recipient.userId,
+				content
+			);
+		}
+	};
 
 	useEffect(() => {
 		setMessages(messageList);

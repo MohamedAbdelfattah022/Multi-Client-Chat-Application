@@ -1,7 +1,9 @@
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using server.Data;
+using server.Hubs;
 using System.Text;
 namespace server
 {
@@ -19,14 +21,17 @@ namespace server
 
 
             builder.Services.AddDbContext<AppDbContext>();
-
+            builder.Services.AddSignalR();
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddOpenApi();
 
 
             builder.Services.AddCors(options => {
-                options.AddPolicy("AllowAll", policy => policy.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+                options.AddPolicy("AllowAll", policy => policy.AllowAnyHeader()
+                .WithOrigins("http://localhost:5173")
+                .AllowAnyMethod()
+                .AllowCredentials());
             });
 
             var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
@@ -53,8 +58,10 @@ namespace server
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment()) {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                //app.UseSwagger();
+                //app.UseSwaggerUI();
+                app.MapOpenApi();
+                app.MapScalarApiReference();
             }
 
             app.UseHttpsRedirection();
@@ -63,7 +70,7 @@ namespace server
 
 
             app.MapControllers();
-
+            app.MapHub<ChatHub>("/chatHub");
             app.Run();
         }
     }

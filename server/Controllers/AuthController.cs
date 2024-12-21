@@ -11,10 +11,11 @@ namespace server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController(JwtOptions jwtOptions, AppDbContext dbContext) : ControllerBase
+    public class AuthController(JwtOptions jwtOptions, AppDbContext dbContext) : ControllerBase
     {
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto formData) {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == formData.Email);
             if (existingUser != null) return Conflict("An error Occured");
@@ -34,6 +35,8 @@ namespace server.Controllers
 
         [HttpPost("login")]
         public async Task<ActionResult> Login(LoginDto loginUser) {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == loginUser.Email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginUser.Password, user.PasswordHash))
                 return BadRequest("Invalid Email or Password");

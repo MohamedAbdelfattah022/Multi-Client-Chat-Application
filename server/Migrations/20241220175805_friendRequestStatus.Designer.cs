@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using server.Data;
 
@@ -11,9 +12,11 @@ using server.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241220175805_friendRequestStatus")]
+    partial class friendRequestStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,47 +111,16 @@ namespace server.Migrations
                     b.ToTable("GroupMembers");
                 });
 
-            modelBuilder.Entity("server.Data.GroupMessage", b =>
+            modelBuilder.Entity("server.Data.Message", b =>
                 {
-                    b.Property<int>("GroupMessageId")
+                    b.Property<int>("MessageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GroupMessageId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
 
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
-
-                    b.Property<byte[]>("ImageContent")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<string>("MessageContent")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("GroupMessageId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("GroupMessages");
-                });
-
-            modelBuilder.Entity("server.Data.PrivateMessage", b =>
-                {
-                    b.Property<int>("PrivateMessageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrivateMessageId"));
 
                     b.Property<byte[]>("ImageContent")
                         .IsRequired()
@@ -167,13 +139,15 @@ namespace server.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("PrivateMessageId");
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("RecipientId");
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("PrivateMessages");
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("server.Data.User", b =>
@@ -245,7 +219,7 @@ namespace server.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("server.Data.GroupMessage", b =>
+            modelBuilder.Entity("server.Data.Message", b =>
                 {
                     b.HasOne("server.Data.Group", "Group")
                         .WithMany("Messages")
@@ -253,30 +227,19 @@ namespace server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("server.Data.User", "Sender")
-                        .WithMany("SentGroupMessages")
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Sender");
-                });
-
-            modelBuilder.Entity("server.Data.PrivateMessage", b =>
-                {
                     b.HasOne("server.Data.User", "Recipient")
-                        .WithMany("ReceivedPrivateMessages")
+                        .WithMany("ReceivedMessages")
                         .HasForeignKey("RecipientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("server.Data.User", "Sender")
-                        .WithMany("SentPrivateMessages")
+                        .WithMany("SentMessages")
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Group");
 
                     b.Navigation("Recipient");
 
@@ -294,13 +257,11 @@ namespace server.Migrations
                 {
                     b.Navigation("GroupMemberships");
 
-                    b.Navigation("ReceivedPrivateMessages");
+                    b.Navigation("ReceivedMessages");
 
                     b.Navigation("ReceivedRequests");
 
-                    b.Navigation("SentGroupMessages");
-
-                    b.Navigation("SentPrivateMessages");
+                    b.Navigation("SentMessages");
 
                     b.Navigation("SentRequests");
                 });

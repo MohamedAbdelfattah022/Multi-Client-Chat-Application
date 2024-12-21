@@ -8,7 +8,7 @@ namespace server.Data
         public int RequestId { get; set; }
         public int SenderId { get; set; }
         public int RecipientId { get; set; }
-        public string Status { get; set; }
+        public bool Status { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public User Sender { get; set; }

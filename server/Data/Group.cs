@@ -11,7 +11,7 @@ namespace server.Data
         public byte[] Avatar { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        public ICollection<Message> Messages { get; set; }
+        public ICollection<GroupMessage> Messages { get; set; }
         public ICollection<GroupMember> GroupMembers { get; set; }
     }
 }

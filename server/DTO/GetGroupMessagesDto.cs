@@ -2,10 +2,10 @@
 
 namespace server.DTO
 {
-    public class GetMessagesDto
+    public class GetGroupMessagesDto
     {
         [Required]
         public int SenderId { get; set; }
-        public int RecipientId { get; set; }
+        public int GroupId { get; set; }
     }
 }

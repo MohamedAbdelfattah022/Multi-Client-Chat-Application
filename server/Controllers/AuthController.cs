@@ -51,6 +51,7 @@ namespace server.Controllers
                 Subject = new ClaimsIdentity(new Claim[] {
                     new Claim(ClaimTypes.Email, loginUser.Email),
                     new Claim("TokenId", Guid.NewGuid().ToString()),
+                    new Claim("UserId", user.UserId.ToString()),
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(jwtOptions.DurationInMin),
             };

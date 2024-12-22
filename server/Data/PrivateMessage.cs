@@ -8,7 +8,7 @@
         public int RecipientId { get; set; }
         public User Recipient { get; set; }
         public string MessageContent { get; set; }
-        public byte[] ImageContent { get; set; }
+        public byte[]? ImageContent { get; set; }
         public DateTime SentAt { get; set; }
     }
 

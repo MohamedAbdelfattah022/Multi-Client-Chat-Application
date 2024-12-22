@@ -73,8 +73,8 @@ namespace server.Controllers
             }
         }
 
-        [HttpGet("getFriends{id:int}")]
-        [Authorize]
+        [HttpGet("getFriends/{id:int}")]
+        //[Authorize]
         public async Task<ActionResult> GetFriends(int id) {
             if (id <= 0) return BadRequest("Invalid Id");
 

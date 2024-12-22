@@ -29,7 +29,7 @@ export const FriendRequests: React.FC = () => {
 						</div>
 						<div>
 							<p className="font-medium">{request.senderName}</p>
-							<p className="text-sm text-gray-500">{request.senderEmail}</p>
+							{/* <p className="text-sm text-gray-500">{request.senderEmail}</p> */}
 						</div>
 					</div>
 					<div className="flex space-x-2">

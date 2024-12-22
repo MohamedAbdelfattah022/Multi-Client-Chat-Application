@@ -32,15 +32,13 @@ namespace server.Controllers
             return Ok(new { SentAt = privateMessage.SentAt });
         }
 
-
-
         [HttpGet("getPrivateMessages")]
         [Authorize]
         public async Task<ActionResult> GetPrivateMessages([FromQuery] GetMessagesDto messagesDto) {
             if (!ModelState.IsValid) return BadRequest("Model not valid");
 
             var messages = await dbContext.PrivateMessages
-                .OrderByDescending(m => m.SentAt)
+                .OrderBy(m => m.SentAt)
                 .Where(m =>
                     (m.SenderId == messagesDto.SenderId && m.RecipientId == messagesDto.RecipientId) ||
                     (m.SenderId == messagesDto.RecipientId && m.RecipientId == messagesDto.SenderId)

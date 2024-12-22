@@ -45,7 +45,7 @@ namespace server.Controllers
             if (!ModelState.IsValid) return BadRequest("Model not valid");
 
             var messages = await dbContext.GroupMessages
-                .OrderByDescending(m => m.SentAt)
+                .OrderBy(m => m.SentAt)
                 .Where(m => m.GroupId == messagesDto.GroupId)
                 .Select(m => new GroupMessageResponseDto {
                     MessageId = m.GroupMessageId,

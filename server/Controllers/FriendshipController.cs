@@ -48,6 +48,29 @@ namespace server.Controllers
             return Ok("Friend request sent successfully.");
         }
 
+        [HttpGet("getReceivedRequests/{userId:int}")]
+        [Authorize]
+        public async Task<ActionResult> GetReceivedRequests(int userId) {
+            if (userId <= 0) return BadRequest("Invalid user ID");
+
+            var receivedRequests = await dbContext.FriendRequests
+                .Where(fr => fr.RecipientId == userId && fr.Status == false)
+                .Include(fr => fr.Sender)
+                .Select(fr => new {
+                    RequestId = fr.RequestId,
+                    SenderId = fr.SenderId,
+                    SenderName = fr.Sender.Name,
+                    SenderEmail = fr.Sender.Email,
+                    SenderProfilePic = fr.Sender.ProfilePic,
+                    CreatedAt = fr.CreatedAt
+                }).ToListAsync();
+
+            if (!receivedRequests.Any())
+                return NotFound("No pending friend requests found.");
+
+            return Ok(receivedRequests);
+        }
+
         [HttpPost("respondToRequest")]
         [Authorize]
         public async Task<ActionResult> RespondToFriendRequest(FriendRequestActionDto actionDto) {
@@ -74,7 +97,7 @@ namespace server.Controllers
         }
 
         [HttpGet("getFriends/{id:int}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetFriends(int id) {
             if (id <= 0) return BadRequest("Invalid Id");
 

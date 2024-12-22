@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
-import { authApi } from "../../services/api";
+import { register } from "../../services/api";
 
 interface SignupFormProps {
 	onSignup: (name: string, email: string, password: string) => void;
@@ -34,10 +34,9 @@ export default function SignupForm({
 		e.preventDefault();
 		if (validatePasswords()) {
 			try {
-				await authApi.register(name, email, password);
+				await register({ fullName: name, email, password });
 				onSignup(name, email, password);
 			} catch (error) {
-				// Handle error appropriately
 				console.error("Registration failed:", error);
 			}
 		}
@@ -116,7 +115,7 @@ export default function SignupForm({
 										className={`block w-full pl-10 pr-3 py-3 border ${
 											passwordError ? "border-red-500" : "border-gray-300"
 										} rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 
-										focus:ring-indigo-500 focus:border-transparent transition-all`}
+                                        focus:ring-indigo-500 focus:border-transparent transition-all`}
 										placeholder="Create a password"
 										required
 									/>
@@ -141,7 +140,7 @@ export default function SignupForm({
 										className={`block w-full pl-10 pr-3 py-3 border ${
 											passwordError ? "border-red-500" : "border-gray-300"
 										} rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 
-										focus:ring-indigo-500 focus:border-transparent transition-all`}
+                                        focus:ring-indigo-500 focus:border-transparent transition-all`}
 										placeholder="Confirm your password"
 										required
 									/>
@@ -154,7 +153,6 @@ export default function SignupForm({
 
 						<button
 							type="submit"
-							onClick={onSwitchToLogin}
 							className="w-full flex items-center justify-center px-4 py-3 border border-transparent 
               text-base font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 
               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 

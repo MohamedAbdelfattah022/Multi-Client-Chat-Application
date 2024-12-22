@@ -1,4 +1,4 @@
-import signalR from "@microsoft/signalr";
+// import signalR from "@microsoft/signalr";
 import { MessageSquare, Users, UserPlus, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -18,12 +18,12 @@ export default function Navigation({
 	const handleLogout = () => {
 		localStorage.removeItem("token");
 
-		const connection = new signalR.HubConnectionBuilder()
-			.withUrl("http://localhost:5271/chatHub")
-			.build();
-		if (connection) {
-			connection.stop();
-		}
+		// const connection = new signalR.HubConnectionBuilder()
+		// 	.withUrl("http://localhost:5271/chatHub")
+		// 	.build();
+		// if (connection) {
+		// 	connection.stop();
+		// }
 		onLogout();
 		navigate("/login");
 	};

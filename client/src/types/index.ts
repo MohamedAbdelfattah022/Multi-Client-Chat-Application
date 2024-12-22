@@ -1,43 +1,38 @@
 export interface User {
-	userId: number;
-	name: string;
-	email: string;
-	profilePic?: string;
-	createdAt: Date;
-	status?: "online" | "offline";
+  userId: number;
+  name: string;
+  email: string;
+  profilePic: string | null;
 }
 
 export interface Message {
-	messageId: number;
-	senderId: number;
-	recipientId?: number;
-	groupId?: number;
-	messageContent: string;
-	imageContent?: Blob;
-	sentAt: string;
+  messageId: number;
+  senderId: number;
+  senderName: string;
+  recipientId?: number;
+  recipientName?: string;
+  groupId?: number;
+  groupName?: string;
+  messageContent: string;
+  imageContent?: string;
+  sentAt: string;
 }
 
 export interface Group {
-	groupId: number;
-	groupName: string;
-	createdAt: Date;
-	members: GroupMember[];
-	description?: string;
-	avatar?: string;
+  groupId: number;
+  groupName: string;
+  description: string | null;
+  avatar: string | null;
+  createdAt: string;
 }
 
-export interface GroupMember {
-	groupMemberId: number;
-	groupId: number;
-	userId: number;
-	joinedAt: Date;
-	isAdmin?: boolean;
-}
-
-export interface FriendRequest {
-	requestId: number;
-	senderId: number;
-	recipientId: number;
-	status: "pending" | "accepted";
-	createdAt: Date;
+export interface AuthResponse {
+  email: string;
+  TokenId: string;
+  UserId: string;
+  nbf: number;
+  exp: number;
+  iat: number;
+  iss: string;
+  aud: string;
 }

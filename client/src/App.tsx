@@ -1,352 +1,79 @@
-import React, { useState } from "react";
-import {
-	BrowserRouter as Router,
-	Routes,
-	Route,
-	Navigate,
-	useNavigate,
-} from "react-router-dom";
-import Navigation from "./components/layout/Navigation";
-import ChatList from "./components/chat/ChatList";
-import ChatWindow from "./components/chat/ChatWindow";
-import GroupList from "./components/groups/GroupList";
-import GroupChat from "./components/groups/GroupChat";
-import FriendRequestList from "./components/friends/FriendRequestList";
-import LoginForm from "./components/auth/LoginForm";
-import SignupForm from "./components/auth/SignupForm";
-import { User, Message, Group, FriendRequest } from "./types";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LoginForm } from './components/auth/LoginForm';
+import { RegisterForm } from './components/auth/RegisterForm';
+import { ChatLayout } from './components/chat/ChatLayout';
+import { useAuthStore } from './stores/authStore';
 
-function AppContent() {
-	const navigate = useNavigate();
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
-	const [currentUser, setCurrentUser] = useState<User | null>(null);
-	const [activeTab, setActiveTab] = useState<
-		"chats" | "groups" | "requests" | "settings"
-	>("chats");
-	const [activeChat, setActiveChat] = useState<User | null>(null);
-	const [activeGroup, setActiveGroup] = useState<Group | null>(null);
-
-	// Mock data for demonstration
-	const mockUser: User = {
-		userId: 1,
-		name: "John Doe",
-		email: "john@example.com",
-		createdAt: new Date(),
-	};
-
-	const mockContacts: User[] = [
-		{
-			userId: 2,
-			name: "Jane Smith",
-			email: "jane@example.com",
-			createdAt: new Date(),
-		},
-		{
-			userId: 3,
-			name: "Alice Johnson",
-			email: "alice@example.com",
-			createdAt: new Date(),
-		},
-	];
-
-	// Mock messages with both private and group messages
-	const mockMessages: Message[] = [
-		{
-			messageId: 1,
-			senderId: 1,
-			recipientId: 2,
-			messageContent: "Hey, how are you?",
-			sentAt: new Date().toISOString(),
-		},
-		{
-			messageId: 2,
-			senderId: 2,
-			recipientId: 1,
-			messageContent: "I'm doing great! How about you?",
-			sentAt: new Date(Date.now() - 3000000).toISOString(),
-		},
-		{
-			messageId: 3,
-			senderId: 1,
-			groupId: 1,
-			messageContent: "Hello team!",
-			sentAt: new Date(Date.now() - 2400000).toISOString(),
-		},
-	];
-
-	const mockChats = mockContacts.map((contact) => ({
-		user: contact,
-		lastMessage:
-			mockMessages.find(
-				(m) =>
-					(m.senderId === contact.userId &&
-						m.recipientId === mockUser.userId) ||
-					(m.senderId === mockUser.userId && m.recipientId === contact.userId)
-			) || mockMessages[0],
-		unreadCount: 1,
-	}));
-
-	const [groups, setGroups] = useState<Group[]>([
-		{
-			groupId: 1,
-			groupName: "Project Team",
-			createdAt: new Date(),
-			members: [
-				{
-					groupMemberId: 1,
-					groupId: 1,
-					userId: 1,
-					joinedAt: new Date(),
-					isAdmin: true,
-				},
-				{ groupMemberId: 2, groupId: 1, userId: 2, joinedAt: new Date() },
-			],
-			description: "Team discussion group",
-		},
-	]);
-
-	const mockRequests: Array<{ request: FriendRequest; user: User }> = [
-		{
-			request: {
-				requestId: 1,
-				senderId: 3,
-				recipientId: 1,
-				status: "pending",
-				createdAt: new Date(),
-			},
-			user: {
-				userId: 3,
-				name: "Alice Johnson",
-				email: "alice@example.com",
-				createdAt: new Date(),
-			},
-		},
-	];
-
-	const handleCreateGroup = (
-		name: string,
-		description: string,
-		members: number[]
-	) => {
-		const newGroup: Group = {
-			groupId: groups.length + 1,
-			groupName: name,
-			description,
-			createdAt: new Date(),
-			members: [
-				{
-					groupMemberId: 1,
-					groupId: groups.length + 1,
-					userId: currentUser!.userId,
-					joinedAt: new Date(),
-					isAdmin: true,
-				},
-				...members.map((userId, index) => ({
-					groupMemberId: index + 2,
-					groupId: groups.length + 1,
-					userId,
-					joinedAt: new Date(),
-				})),
-			],
-		};
-		setGroups([...groups, newGroup]);
-		setActiveGroup(newGroup);
-	};
-
-	const handleChatSelect = (userId: number) => {
-		const selectedUser = mockContacts.find(
-			(contact) => contact.userId === userId
-		);
-		setActiveChat(selectedUser || null);
-	};
-
-	const handleGroupSelect = (groupId: number) => {
-		const selectedGroup = groups.find((group) => group.groupId === groupId);
-		setActiveGroup(selectedGroup || null);
-	};
-
-	const getFilteredMessages = (type: "chat" | "group", id: number) => {
-		return mockMessages.filter((message) => {
-			if (type === "chat") {
-				return (
-					(message.senderId === id &&
-						message.recipientId === mockUser?.userId) ||
-					(message.senderId === mockUser?.userId && message.recipientId === id)
-				);
-			} else {
-				return message.groupId === id;
-			}
-		});
-	};
-
-	const handleLogin = (email: string, password: string) => {
-		setCurrentUser(mockUser);
-		setIsAuthenticated(true);
-	};
-
-	const handleSignup = (name: string, email: string, password: string) => {
-		// Handle signup logic
-		setIsAuthenticated(true);
-	};
-
-	return (
-		<Routes>
-			<Route
-				path="/"
-				element={
-					!isAuthenticated ? (
-						<LoginForm onLogin={handleLogin} />
-					) : (
-						<Navigate to="/chat" />
-					)
-				}
-			/>
-			<Route
-				path="/signup"
-				element={
-					!isAuthenticated ? (
-						<SignupForm
-							onSignup={handleSignup}
-							onSwitchToLogin={() => navigate('/')}
-						/>
-					) : (
-						<Navigate to="/chat" />
-					)
-				}
-			/>
-			<Route
-				path="/chat"
-				element={
-					isAuthenticated ? (
-						<div className="flex h-screen bg-white">
-							<Navigation
-								activeTab={activeTab}
-								onTabChange={(tab) => {
-									setActiveTab(tab);
-									setActiveChat(null);
-									setActiveGroup(null);
-								}}
-								onLogout={() => setIsAuthenticated(false)}
-							/>
-							{activeTab === "chats" && (
-								<>
-									<ChatList
-										chats={mockChats}
-										contacts={mockContacts}
-										onChatSelect={handleChatSelect}
-									/>
-									{activeChat ? (
-										<ChatWindow
-											currentUser={mockUser}
-											recipient={activeChat}
-											messageList={getFilteredMessages(
-												"chat",
-												activeChat.userId
-											)}
-											onSendMessage={(content) => {
-												console.log("Sending message:", content);
-											}}
-											onEditMessage={(messageId, content) => {
-												console.log("Editing message:", messageId, content);
-											}}
-											onDeleteMessage={(messageId) => {
-												console.log("Deleting message:", messageId);
-											}}
-										/>
-									) : (
-										<div className="flex-1 flex items-center justify-center bg-gray-50">
-											<div className="text-center">
-												<h3 className="text-lg font-medium text-gray-900">
-													Welcome to Chat
-												</h3>
-												<p className="mt-1 text-sm text-gray-500">
-													Select a conversation to start messaging
-												</p>
-											</div>
-										</div>
-									)}
-								</>
-							)}
-
-							{activeTab === "groups" && (
-								<>
-									<GroupList
-										groups={groups}
-										contacts={mockContacts}
-										onGroupSelect={handleGroupSelect}
-										onCreateGroup={handleCreateGroup}
-									/>
-									{activeGroup ? (
-										<GroupChat
-											group={activeGroup}
-											messages={getFilteredMessages(
-												"group",
-												activeGroup.groupId
-											)}
-											currentUser={mockUser}
-											onSendMessage={(content, groupId) => {
-												console.log(
-													"Sending group message:",
-													content,
-													groupId
-												);
-											}}
-											onAddMember={() => {}}
-											onOpenSettings={() => {}}
-											onEditMessage={function (
-												messageId: number,
-												content: string
-											): void {
-												throw new Error("Function not implemented.");
-											}}
-											onDeleteMessage={function (messageId: number): void {
-												throw new Error("Function not implemented.");
-											}}
-										/>
-									) : (
-										<div className="flex-1 flex items-center justify-center bg-gray-50">
-											<div className="text-center">
-												<h3 className="text-lg font-medium text-gray-900">
-													Welcome to Groups
-												</h3>
-												<p className="mt-1 text-sm text-gray-500">
-													Select a group to start messaging
-												</p>
-											</div>
-										</div>
-									)}
-								</>
-							)}
-							{activeTab === "requests" && (
-								<FriendRequestList
-									requests={mockRequests}
-									onAccept={(requestId) => {
-										console.log("Accepting request:", requestId);
-									}}
-									onReject={(requestId) => {
-										console.log("Rejecting request:", requestId);
-									}}
-									onSendRequest={(email) => {
-										console.log("Sending friend request to:", email);
-									}}
-								/>
-							)}
-						</div>
-					) : (
-						<Navigate to="/" />
-					)
-				}
-			/>
-		</Routes>
-	);
-}
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
 
 function App() {
-	return (
-		<Router>
-			<AppContent />
-		</Router>
-	);
+  return (
+    <Router>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+              <div className="w-full max-w-md space-y-8 rounde d-lg bg-white p-8 shadow-lg">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Sign in to your account
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Or{' '}
+                    <a
+                      href="/register"
+                      className="font-medium text-blue-600 hover:text-blue-500"
+                    >
+                      create a new account
+                    </a>
+                  </p>
+                </div>
+                <LoginForm />
+              </div>
+            </div>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+              <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Create your account
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <a
+                      href="/login"
+                      className="font-medium text-blue-600 hover:text-blue-500"
+                    >
+                      Sign in
+                    </a>
+                  </p>
+                </div>
+                <RegisterForm />
+              </div>
+            </div>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <PrivateRoute>
+              <ChatLayout />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/chat" />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

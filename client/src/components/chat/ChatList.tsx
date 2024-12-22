@@ -3,49 +3,50 @@ import { MessageSquare, Plus, Search } from "lucide-react";
 import NewChatButton from "./NewChatButton";
 import NewChatModal from "./NewChatModal";
 import SearchInput from "../common/SearchInput";
-import { useSignalR } from "../../services/SignalRService";
+import { User } from "../../types";
+import { getPrivateMessages } from "../../services/api";
 
-const ChatList = ({
-	chats = [],
-	contacts = [],
-	onChatSelect,
-}: {
-	chats: any[];
-	contacts: any[];
-	onChatSelect: (userId: number) => void;
-}) => {
+interface ChatListProps {
+	chats: User[];
+	contacts: User[];
+	onChatSelect: (user: User) => void;
+}
+
+const ChatList = ({ chats, contacts, onChatSelect }: ChatListProps) => {
 	const [showNewChatModal, setShowNewChatModal] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const signalRConnection = useSignalR("http://localhost:5173/chatHub");
+	const [lastMessages, setLastMessages] = useState<Record<number, string>>({});
 
 	useEffect(() => {
-		if (signalRConnection) {
-			signalRConnection.start().then(() => {
-				console.log("Connected to SignalR");
+		// Load last messages for each chat
+		const loadLastMessages = async () => {
+			const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+			if (!currentUserId) return;
 
-				signalRConnection.on("UserConnected", (userId) => {
-					console.log(`${userId} connected`);
-				});
+			const messages: Record<number, string> = {};
+			for (const chat of chats) {
+				try {
+					const chatMessages = await getPrivateMessages({
+						senderId: currentUserId,
+						recipientId: chat.userId,
+					});
+					if (chatMessages.length > 0) {
+						messages[chat.userId] = chatMessages[0].messageContent;
+					}
+				} catch (error) {
+					console.error("Error loading messages:", error);
+				}
+			}
+			setLastMessages(messages);
+		};
 
-				signalRConnection.on("UserDisconnected", (userId) => {
-					console.log(`${userId} disconnected`);
-				});
-
-				signalRConnection.on("ReceiveOnlineUsers", (users) => {
-					console.log("Online users: ", users);
-				});
-			});
-
-			return () => {
-				signalRConnection.stop();
-			};
-		}
-	}, [signalRConnection]);
+		loadLastMessages();
+	}, [chats]);
 
 	const filteredChats = chats.filter(
 		(chat) =>
-			chat.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			chat.user.email.toLowerCase().includes(searchQuery.toLowerCase())
+			chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			chat.email.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
 	return (
@@ -80,10 +81,10 @@ const ChatList = ({
 				{/* Scrollable Chats Grid */}
 				<div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2">
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-						{filteredChats.map(({ user, lastMessage, unreadCount }) => (
+						{filteredChats.map((chat) => (
 							<button
-								key={user.userId}
-								onClick={() => onChatSelect(user.userId)}
+								key={chat.userId}
+								onClick={() => onChatSelect(chat)}
 								className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200
 												 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
 							>
@@ -91,26 +92,21 @@ const ChatList = ({
 									<div className="relative mb-4">
 										<img
 											src={
-												user.profilePic ||
+												chat.profilePic ||
 												`https://ui-avatars.com/api/?name=${encodeURIComponent(
-													user.name
+													chat.name
 												)}`
 											}
-											alt={user.name}
+											alt={chat.name}
 											className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
 										/>
-										{unreadCount > 0 && (
-											<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
-												{unreadCount}
-											</span>
-										)}
 										<span className="absolute bottom-0 right-0 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></span>
 									</div>
 									<h3 className="font-semibold text-gray-900 mb-2">
-										{user.name}
+										{chat.name}
 									</h3>
 									<p className="text-sm text-gray-500 line-clamp-2">
-										{lastMessage?.content}
+										{lastMessages[chat.userId] || "No messages yet"}
 									</p>
 								</div>
 							</button>
@@ -134,9 +130,12 @@ const ChatList = ({
 			{showNewChatModal && (
 				<NewChatModal
 					contacts={contacts}
-					onStartChat={(userId) => {
-						onChatSelect(userId);
-						setShowNewChatModal(false);
+					onStartChat={(userId: number) => {
+						const user = contacts.find((contact) => contact.userId === userId);
+						if (user) {
+							onChatSelect(user);
+							setShowNewChatModal(false);
+						}
 					}}
 					onClose={() => setShowNewChatModal(false)}
 				/>

@@ -134,6 +134,15 @@ export const addGroupMembers = async (addMembersDto: AddGroupMembersDto) => {
 	return response.data;
 };
 
+export const getGroupMembers = async (groupId: number) => {
+	const response = await api.get(`/Group/getGroupMembers/${groupId}`, {
+		headers: {
+			Authorization: `Bearer ${localStorage.getItem("token")}`,
+		},
+	});
+	return response.data;
+};
+
 export const deleteGroupMember = async (
 	deleteMemberDto: AddGroupMembersDto
 ) => {

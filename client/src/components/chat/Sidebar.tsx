@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Users, UserPlus, MessageSquare, LogOut, Bell } from "lucide-react";
+import { Users, MessageSquare, LogOut, Bell } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useFriendStore } from "../../stores/friendStore";
 import { Button } from "../ui/Button";
 import { AddFriend } from "../friends/AddFriend";
 import { FriendRequests } from "../friends/FriendRequests";
+import GroupList from "../groups/GroupList";
+import { createGroup } from "../../services/api";
+import FriendList from "../friends/FriendList";
 
 export const Sidebar: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<"friends" | "groups">("friends");
@@ -22,12 +25,26 @@ export const Sidebar: React.FC = () => {
 		}
 	}, [userId, loadPendingRequests]);
 
-	const handleAddButtonClick = () => {
-		if (activeTab === "friends") {
-			setShowAddFriend(!showAddFriend);
-		} else {
-			// Handle group creation
-			console.log("Create group clicked");
+	const { loadGroups } = useChatStore();
+
+	const handleCreateGroup = async (
+		name: string,
+		description: string,
+		members: number[]
+	) => {
+		const { userId } = useAuthStore.getState();
+		if (!userId) return;
+
+		try {
+			await createGroup({
+				groupName: name,
+				description: description,
+				adminId: Number(userId),
+				participantIds: members,
+			});
+			await loadGroups();
+		} catch (error) {
+			console.error("Failed to create group:", error);
 		}
 	};
 
@@ -90,65 +107,19 @@ export const Sidebar: React.FC = () => {
 
 			<div className="flex-1 overflow-y-auto">
 				{activeTab === "friends" ? (
-					<div className="space-y-2 p-4">
-						{friends.map((friend) => (
-							<button
-								key={friend.userId}
-								className="flex w-full items-center rounded-lg p-2 hover:bg-gray-100"
-								onClick={() => setSelectedChat("private", friend.userId)}
-							>
-								<div className="h-10 w-10 rounded-full bg-gray-300">
-									{friend.profilePic ? (
-										<img
-											src={friend.profilePic}
-											alt={friend.name}
-											className="h-full w-full rounded-full object-cover"
-										/>
-									) : (
-										<div className="flex h-full w-full items-center justify-center">
-											<Users className="h-6 w-6 text-gray-500" />
-										</div>
-									)}
-								</div>
-								<span className="ml-3 text-sm font-medium">{friend.name}</span>
-							</button>
-						))}
-					</div>
+					<FriendList
+						friends={friends}
+						onFriendSelect={(friendId) => setSelectedChat("private", friendId)}
+						onAddFriend={() => setShowAddFriend(true)}
+					/>
 				) : (
-					<div className="space-y-2 p-4">
-						{groups.map((group) => (
-							<button
-								key={group.groupId}
-								className="flex w-full items-center rounded-lg p-2 hover:bg-gray-100"
-								onClick={() => setSelectedChat("group", group.groupId)}
-							>
-								<div className="h-10 w-10 rounded-full bg-gray-300">
-									{group.avatar ? (
-										<img
-											src={group.avatar}
-											alt={group.groupName}
-											className="h-full w-full rounded-full object-cover"
-										/>
-									) : (
-										<div className="flex h-full w-full items-center justify-center">
-											<MessageSquare className="h-6 w-6 text-gray-500" />
-										</div>
-									)}
-								</div>
-								<span className="ml-3 text-sm font-medium">
-									{group.groupName}
-								</span>
-							</button>
-						))}
-					</div>
+					<GroupList
+						groups={groups}
+						contacts={friends}
+						onGroupSelect={(groupId) => setSelectedChat("group", groupId)}
+						onCreateGroup={handleCreateGroup}
+					/>
 				)}
-			</div>
-
-			<div className="border-t p-4">
-				<Button className="w-full" onClick={handleAddButtonClick}>
-					{/* <UserPlus className="mr-2 h-5 w-5" /> */}
-					{activeTab === "friends" ? "Add Friend" : "Create Group"}
-				</Button>
 			</div>
 		</div>
 	);

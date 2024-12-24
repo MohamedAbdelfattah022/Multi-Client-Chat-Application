@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.DTO;
+using server.Hubs;
 
 namespace server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MessagesController(AppDbContext dbContext) : ControllerBase
+    public class MessagesController(AppDbContext dbContext, IHubContext<ChatHub> hubContext) : ControllerBase
     {
         [HttpPost("sendPrivateMessage")]
         [Authorize]
@@ -29,8 +31,31 @@ namespace server.Controllers
             dbContext.PrivateMessages.Add(privateMessage);
             await dbContext.SaveChangesAsync();
 
+            var messageWithUsers = await dbContext.PrivateMessages
+                .Include(m => m.Sender)
+                .Include(m => m.Recipient)
+                .FirstOrDefaultAsync(m => m.PrivateMessageId == privateMessage.PrivateMessageId);
+
+            var messageResponse = new MessageResponseDto {
+                MessageId = messageWithUsers.PrivateMessageId,
+                SenderId = messageWithUsers.SenderId,
+                SenderName = messageWithUsers.Sender.Name,
+                RecipientId = messageWithUsers.RecipientId,
+                RecipientName = messageWithUsers.Recipient.Name,
+                MessageContent = messageWithUsers.MessageContent,
+                ImageContent = messageWithUsers.ImageContent,
+                SentAt = messageWithUsers.SentAt
+            };
+
+            await hubContext.Clients.Group(messageDto.SenderId.ToString())
+                .SendAsync("ReceiveMessage", messageResponse);
+
+            await hubContext.Clients.Group(messageDto.RecipientId.ToString())
+                .SendAsync("ReceiveMessage", messageResponse);
+
             return Ok(new { SentAt = privateMessage.SentAt });
         }
+
 
         [HttpGet("getPrivateMessages")]
         [Authorize]

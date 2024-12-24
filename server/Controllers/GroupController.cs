@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.DTO;
@@ -11,7 +12,7 @@ namespace server.Controllers
     {
 
         [HttpPost("sendGroupMessage")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> SendGroupMessage(SendGroupMessageDto messageDto) {
             if (!ModelState.IsValid) return BadRequest("Invalid model");
 
@@ -40,7 +41,7 @@ namespace server.Controllers
         }
 
         [HttpGet("getGroupMessages")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetGroupMessages([FromQuery] GetGroupMessagesDto messagesDto) {
             if (!ModelState.IsValid) return BadRequest("Model not valid");
 
@@ -64,7 +65,7 @@ namespace server.Controllers
         }
 
         [HttpPost("createGroup")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> CreateGroup(CreateGroupDto createGroupDto) {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -102,7 +103,7 @@ namespace server.Controllers
         }
 
         [HttpGet("getUserGroups/{userId}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetUserGroups(int userId) {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -123,7 +124,7 @@ namespace server.Controllers
         }
 
         [HttpPost("addGroupMembers")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> AddGroupMember(AddGroupMembersDto addMembersDto) {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -157,7 +158,7 @@ namespace server.Controllers
         }
 
         [HttpDelete("deleteMember")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> DeleteMember(AddGroupMembersDto deleteMemberDto) {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -186,7 +187,7 @@ namespace server.Controllers
 
 
         [HttpPatch("updateGroupMessage/{messageId:int}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> UpdateGroupMessage(int messageId, UpdateMessageDto updateMessageDto) {
             if (!ModelState.IsValid)
                 return BadRequest("Invalid Model");
@@ -205,7 +206,7 @@ namespace server.Controllers
         }
 
         [HttpDelete("deleteGroupMessage/{messageId}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> DeleteGroupMessage(int messageId) {
             var message = await dbContext.GroupMessages.FindAsync(messageId);
 

@@ -4,7 +4,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useFriendStore } from "../../stores/friendStore";
 import { Button } from "../ui/Button";
-import { AddFriend } from "../friends/AddFriend";
+// import { AddFriend } from "../friends/AddFriend";
 import { FriendRequests } from "../friends/FriendRequests";
 import GroupList from "../groups/GroupList";
 import { createGroup } from "../../services/api";
@@ -12,7 +12,6 @@ import FriendList from "../friends/FriendList";
 
 export const Sidebar: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<"friends" | "groups">("friends");
-	const [showAddFriend, setShowAddFriend] = useState(false);
 	const [showFriendRequests, setShowFriendRequests] = useState(false);
 	const { friends, groups, setSelectedChat } = useChatStore();
 	const { userId } = useAuthStore();
@@ -78,7 +77,7 @@ export const Sidebar: React.FC = () => {
 			</div>
 
 			{showFriendRequests && <FriendRequests />}
-			{showAddFriend && <AddFriend />}
+			{/* {showAddFriend && <AddFriend />} */}
 
 			<div className="flex border-b">
 				<button
@@ -110,7 +109,7 @@ export const Sidebar: React.FC = () => {
 					<FriendList
 						friends={friends}
 						onFriendSelect={(friendId) => setSelectedChat("private", friendId)}
-						onAddFriend={() => setShowAddFriend(true)}
+						// onAddFriend={() => setShowAddFriend(true)}
 					/>
 				) : (
 					<GroupList

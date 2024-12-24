@@ -21,16 +21,10 @@ export const AddFriend: React.FC = () => {
 	} = useForm<AddFriendFormData>();
 
 	const onSubmit = async (data: AddFriendFormData) => {
-		console.log("Form submitted with data:", data); // Add this line
-
 		try {
-			console.log("Sending friend request:", { userId, email: data.email });
 			await sendFriendRequest(Number(userId), data.email);
-			console.log("Friend request sent successfully");
 			reset();
-		} catch (error) {
-			console.error("Failed to send friend request:", error);
-		}
+		} catch (error) {}
 	};
 
 	return (
@@ -49,7 +43,6 @@ export const AddFriend: React.FC = () => {
 				/>
 			</div>
 			<Button type="submit" className="w-full" disabled={isSubmitting}>
-				{/* <UserPlus className="mr-2 h-5 w-5" /> */}
 				Send Friend Request
 			</Button>
 		</form>

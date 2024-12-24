@@ -3,6 +3,7 @@ import * as signalR from "@microsoft/signalr";
 class SignalRService {
 	private connection: signalR.HubConnection;
 	private messageCallbacks: ((message: any) => void)[] = [];
+	private groupMessageCallbacks: ((message: any) => void)[] = [];
 
 	constructor() {
 		this.connection = new signalR.HubConnectionBuilder()
@@ -14,6 +15,10 @@ class SignalRService {
 		this.connection.on("ReceiveMessage", (message) => {
 			this.messageCallbacks.forEach((callback) => callback(message));
 		});
+
+		this.connection.on("ReceiveGroupMessage", (message) => {
+			this.groupMessageCallbacks.forEach((callback) => callback(message));
+		});
 	}
 
 	public async start(userId: string) {
@@ -21,9 +26,8 @@ class SignalRService {
 			if (this.connection.state === signalR.HubConnectionState.Disconnected) {
 				await this.connection.start();
 				console.log("SignalR Connected");
-				const userIdString = userId.toString();
-				await this.connection.invoke("JoinPrivateChat", userIdString);
-				console.log(`Joined private chat for user: ${userIdString}`);
+				await this.connection.invoke("JoinPrivateChat", userId.toString());
+				console.log(`Joined private chat for user: ${userId}`);
 			}
 		} catch (err) {
 			console.error("SignalR Connection Error: ", err);
@@ -46,6 +50,29 @@ class SignalRService {
 				(cb) => cb !== callback
 			);
 		};
+	}
+
+	public onGroupMessage(callback: (message: any) => void) {
+		this.groupMessageCallbacks.push(callback);
+		return () => {
+			this.groupMessageCallbacks = this.groupMessageCallbacks.filter(
+				(cb) => cb !== callback
+			);
+		};
+	}
+
+	public async joinGroupChat(groupId: string) {
+		if (this.connection.state === signalR.HubConnectionState.Connected) {
+			await this.connection.invoke("JoinGroupChat", groupId);
+			console.log(`Joined group chat: ${groupId}`);
+		}
+	}
+
+	public async leaveGroupChat(groupId: string) {
+		if (this.connection.state === signalR.HubConnectionState.Connected) {
+			await this.connection.invoke("LeaveGroupChat", groupId);
+			console.log(`Left group chat: ${groupId}`);
+		}
 	}
 
 	public async initializePrivateChat(

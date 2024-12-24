@@ -53,6 +53,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
 				}
 			}
 		});
+
+		signalRService.onGroupMessage((message) => {
+			const state = get();
+			if (message.groupId) {
+				const existingMessages = state.groupMessages[message.groupId] || [];
+				if (!existingMessages.some((m) => m.messageId === message.messageId)) {
+					set({
+						groupMessages: {
+							...state.groupMessages,
+							[message.groupId]: [...existingMessages, message],
+						},
+					});
+				}
+			}
+		});
 	},
 
 	disconnectSignalR: async (userId: string) => {
@@ -64,6 +79,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
 	privateMessages: {},
 	groupMessages: {},
 	selectedChat: null,
+
+	setSelectedChat: (type: "private" | "group", id: number) => {
+		const { userId } = useAuthStore.getState();
+		if (!userId) return;
+
+		const previousChat = get().selectedChat;
+		if (previousChat?.type === "group") {
+			signalRService.leaveGroupChat(previousChat.id.toString());
+		}
+
+		if (type === "private") {
+			signalRService.initializePrivateChat(userId.toString(), id.toString());
+		} else if (type === "group") {
+			signalRService.joinGroupChat(id.toString());
+		}
+
+		set({ selectedChat: { type, id } });
+	},
 
 	loadFriends: async () => {
 		const { userId } = useAuthStore.getState();
@@ -177,15 +210,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		} catch (error) {
 			console.error("Failed to send group message:", error);
 		}
-	},
-
-	setSelectedChat: (type: "private" | "group", id: number) => {
-		const { userId } = useAuthStore.getState();
-		if (!userId) return;
-		if (type === "private") {
-			signalRService.initializePrivateChat(userId.toString(), id.toString());
-		}
-		set({ selectedChat: { type, id } });
 	},
 
 	addFriend: async (friendId: number) => {

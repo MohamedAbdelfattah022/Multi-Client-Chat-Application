@@ -4,7 +4,6 @@ import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useFriendStore } from "../../stores/friendStore";
 import { Button } from "../ui/Button";
-// import { AddFriend } from "../friends/AddFriend";
 import { FriendRequests } from "../friends/FriendRequests";
 import GroupList from "../groups/GroupList";
 import { createGroup } from "../../services/api";
@@ -77,7 +76,6 @@ export const Sidebar: React.FC = () => {
 			</div>
 
 			{showFriendRequests && <FriendRequests />}
-			{/* {showAddFriend && <AddFriend />} */}
 
 			<div className="flex border-b">
 				<button
@@ -109,7 +107,6 @@ export const Sidebar: React.FC = () => {
 					<FriendList
 						friends={friends}
 						onFriendSelect={(friendId) => setSelectedChat("private", friendId)}
-						// onAddFriend={() => setShowAddFriend(true)}
 					/>
 				) : (
 					<GroupList

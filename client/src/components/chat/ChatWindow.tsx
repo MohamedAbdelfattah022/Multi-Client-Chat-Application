@@ -41,7 +41,6 @@ export const ChatWindow: React.FC = () => {
 	const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
 	const [editContent, setEditContent] = useState("");
 
-	// Add state for group members
 	const [groupMembers, setGroupMembers] = useState<Array<{
 		userId: number;
 		name: string;
@@ -49,7 +48,6 @@ export const ChatWindow: React.FC = () => {
 		isAdmin: boolean;
 	}>>([]);
 
-	// Add useEffect to fetch group members when a group chat is selected
 	useEffect(() => {
 		const fetchGroupMembers = async () => {
 			if (selectedChat?.type === "group") {
@@ -72,7 +70,6 @@ export const ChatWindow: React.FC = () => {
 				await updateGroupMessage(messageId, updateDto);
 			}
 
-			// Update local state
 			const messageMap =
 				selectedChat.type === "private" ? privateMessages : groupMessages;
 			const chatId = selectedChat.id;
@@ -111,7 +108,6 @@ export const ChatWindow: React.FC = () => {
 				await deleteGroupMessage(messageId);
 			}
 
-			// Update local state
 			const messageMap =
 				selectedChat.type === "private" ? privateMessages : groupMessages;
 			const chatId = selectedChat.id;

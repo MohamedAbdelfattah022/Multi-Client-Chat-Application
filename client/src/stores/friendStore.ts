@@ -35,10 +35,7 @@ export const useFriendStore = create<FriendStore>((set) => ({
 	sendFriendRequest: async (senderId: number, recipientEmail: string) => {
 		try {
 			await api.post("/Friendship/sendRequest", { senderId, recipientEmail });
-		} catch (error) {
-			console.error("Failed to send friend request:", error);
-			throw error;
-		}
+		} catch (error) {}
 	},
 
 	acceptRequest: async (

@@ -1,27 +1,25 @@
 import { useState } from "react";
-import { Users, Plus, Search } from "lucide-react";
-import { Group, User } from "../../types/index";
-import CreateGroupModal from "./modals/CreateGroupModal";
+import { Users, UserPlus, Search } from "lucide-react";
+import { User } from "../../types";
 import SearchInput from "../common/SearchInput";
+import { AddFriend } from "./AddFriend";
 
-interface GroupListProps {
-	groups: Group[];	
-	contacts: User[];
-	onGroupSelect: (groupId: number) => void;
-	onCreateGroup: (name: string, description: string, members: number[]) => void;
+interface FriendListProps {
+	friends: User[];
+	onFriendSelect: (friendId: number) => void;
 }
 
-export default function GroupList({
-	groups,
-	contacts,
-	onGroupSelect,
-	onCreateGroup,
-}: GroupListProps) {
-	const [showCreateModal, setShowCreateModal] = useState(false);
+export default function FriendList({
+	friends,
+	onFriendSelect,
+}: FriendListProps) {
 	const [searchQuery, setSearchQuery] = useState("");
+	const [showAddFriend, setShowAddFriend] = useState(false);
 
-	const filteredGroups = groups.filter((group) =>
-		group.groupName.toLowerCase().includes(searchQuery.toLowerCase())
+	const filteredFriends = friends.filter(
+		(friend) =>
+			friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			friend.email.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
 	return (
@@ -34,72 +32,66 @@ export default function GroupList({
 						<SearchInput
 							value={searchQuery}
 							onChange={setSearchQuery}
-							placeholder="Search groups"
+							placeholder="Search friends"
 						/>
 					</div>
 				</div>
 
-				{/* Groups List */}
+				{/* Add Friend Form */}
+				{showAddFriend && <AddFriend />}
+
+				{/* Friends List */}
 				<div className="flex-1 overflow-y-auto">
-					{filteredGroups.map((group) => (
+					{filteredFriends.map((friend) => (
 						<button
-							key={group.groupId}
-							onClick={() => onGroupSelect(group.groupId)}
+							key={friend.userId}
+							onClick={() => onFriendSelect(friend.userId)}
 							className="w-full flex items-center p-4 hover:bg-gray-50 transition-colors border-b"
 						>
 							<div className="relative">
 								<img
 									src={
-										group.avatar ||
+										friend.profilePic ||
 										`https://ui-avatars.com/api/?name=${encodeURIComponent(
-											group.groupName
+											friend.name
 										)}`
 									}
-									alt={group.groupName}
+									alt={friend.name}
 									className="w-12 h-12 rounded-full object-cover"
 								/>
+								<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
 							</div>
 							<div className="ml-4 flex-1 min-w-0">
 								<div className="flex items-center justify-between">
 									<h3 className="font-medium text-gray-900 truncate">
-										{group.groupName}
+										{friend.name}
 									</h3>
+									<span className="text-sm text-gray-500">Online</span>
 								</div>
 							</div>
 						</button>
 					))}
 
-					{filteredGroups.length === 0 && (
+					{filteredFriends.length === 0 && (
 						<div className="flex flex-col items-center justify-center h-full text-center p-4">
 							<Users className="h-12 w-12 text-gray-400 mb-2" />
-							<p className="text-gray-600">No groups found</p>
+							<p className="text-gray-600">No friends found</p>
 						</div>
 					)}
 				</div>
 
-				{/* Create Group Button */}
+				{/* Add Friend Button */}
 				<div className="p-4 border-t">
 					<button
-						onClick={() => setShowCreateModal(true)}
+						onClick={() => setShowAddFriend(!showAddFriend)}
 						className="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 text-white rounded-lg
-						hover:bg-indigo-700 transition-colors"
+                        hover:bg-indigo-700 transition-colors"
 					>
-						<Plus className="h-5 w-5" />
-						Create New Group
+						<UserPlus className="h-5 w-5" />
+						{showAddFriend ? "Close" : "Add New Friend"}
 					</button>
 				</div>
 			</div>
-
-			{showCreateModal && (
-				<CreateGroupModal
-					contacts={contacts}
-					onCreateGroup={(...args) => {
-						onCreateGroup(...args);
-						setShowCreateModal(false);
-					}}
-					onClose={() => setShowCreateModal(false)}
-				/>
-			)}
 		</div>
 	);
 }

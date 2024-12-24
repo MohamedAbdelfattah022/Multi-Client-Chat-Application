@@ -14,7 +14,7 @@ export interface Message {
 	groupId?: number;
 	groupName?: string;
 	messageContent: string;
-	imageContent?: string;
+	imageContent?: Blob;
 	sentAt: string;
 }
 

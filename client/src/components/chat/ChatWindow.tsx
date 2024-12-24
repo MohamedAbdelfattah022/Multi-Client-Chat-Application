@@ -1,11 +1,19 @@
-import React, { useEffect, useRef } from "react";
-import { Send, Image } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Send, Image, Settings, Edit2, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { useChatStore } from "../../stores/chatStore";
 import { useAuthStore } from "../../stores/authStore";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import {
+	deleteGroupMessage,
+	deletePrivateMessage,
+	updateGroupMessage,
+	updatePrivateMessage,
+	getGroupMembers,
+} from "../../services/api";
+import { Group, User } from "../../types";
 
 interface MessageFormData {
 	content: string;
@@ -23,9 +31,120 @@ export const ChatWindow: React.FC = () => {
 		loadGroupMessages,
 		initializeSignalR,
 		disconnectSignalR,
+		friends,
+		groups,
 	} = useChatStore();
 
 	const { userId } = useAuthStore();
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const [showSettings, setShowSettings] = useState(false);
+	const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+	const [editContent, setEditContent] = useState("");
+
+	// Add state for group members
+	const [groupMembers, setGroupMembers] = useState<Array<{
+		userId: number;
+		name: string;
+		profilePic: string | null;
+		isAdmin: boolean;
+	}>>([]);
+
+	// Add useEffect to fetch group members when a group chat is selected
+	useEffect(() => {
+		const fetchGroupMembers = async () => {
+			if (selectedChat?.type === "group") {
+				const members = await getGroupMembers(selectedChat.id);
+				setGroupMembers(members);
+			}
+		};
+		fetchGroupMembers();
+	}, [selectedChat]);
+
+	const handleEditMessage = async (messageId: number, newContent: string) => {
+		try {
+			if (!selectedChat) return;
+
+			const updateDto = { messageContent: newContent };
+
+			if (selectedChat.type === "private") {
+				await updatePrivateMessage(messageId, updateDto);
+			} else {
+				await updateGroupMessage(messageId, updateDto);
+			}
+
+			// Update local state
+			const messageMap =
+				selectedChat.type === "private" ? privateMessages : groupMessages;
+			const chatId = selectedChat.id;
+			const updatedMessages = messageMap[chatId].map((msg) =>
+				msg.messageId === messageId
+					? { ...msg, messageContent: newContent }
+					: msg
+			);
+
+			useChatStore.setState((state) => ({
+				[selectedChat.type === "private" ? "privateMessages" : "groupMessages"]:
+					{
+						...state[
+							selectedChat.type === "private"
+								? "privateMessages"
+								: "groupMessages"
+						],
+						[chatId]: updatedMessages,
+					},
+			}));
+
+			setEditingMessageId(null);
+			setEditContent("");
+		} catch (error) {
+			console.error("Failed to edit message:", error);
+		}
+	};
+
+	const handleDeleteMessage = async (messageId: number) => {
+		try {
+			if (!selectedChat) return;
+
+			if (selectedChat.type === "private") {
+				await deletePrivateMessage(messageId);
+			} else {
+				await deleteGroupMessage(messageId);
+			}
+
+			// Update local state
+			const messageMap =
+				selectedChat.type === "private" ? privateMessages : groupMessages;
+			const chatId = selectedChat.id;
+			const updatedMessages = messageMap[chatId].filter(
+				(msg) => msg.messageId !== messageId
+			);
+
+			useChatStore.setState(
+				(state: { privateMessages: any; groupMessages: any }) => ({
+					[selectedChat.type === "private"
+						? "privateMessages"
+						: "groupMessages"]: {
+						...state[
+							selectedChat.type === "private"
+								? "privateMessages"
+								: "groupMessages"
+						],
+						[chatId]: updatedMessages,
+					},
+				})
+			);
+		} catch (error) {
+			console.error("Failed to delete message:", error);
+		}
+	};
+
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { isSubmitting },
+	} = useForm<MessageFormData>();
+
 	useEffect(() => {
 		if (userId) {
 			initializeSignalR(userId);
@@ -35,14 +154,6 @@ export const ChatWindow: React.FC = () => {
 			};
 		}
 	}, [userId, initializeSignalR, disconnectSignalR]);
-
-	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const {
-		register,
-		handleSubmit,
-		reset,
-		formState: { isSubmitting },
-	} = useForm<MessageFormData>();
 
 	useEffect(() => {
 		if (selectedChat) {
@@ -77,6 +188,16 @@ export const ChatWindow: React.FC = () => {
 		}
 	};
 
+	const currentChat =
+		selectedChat?.type === "private"
+			? friends.find((f) => f.userId === selectedChat.id)
+			: groups.find((g) => g.groupId === selectedChat?.id);
+
+	const displayName =
+		selectedChat?.type === "private"
+			? (currentChat as User)?.name
+			: (currentChat as Group)?.groupName;
+
 	const messages = selectedChat
 		? selectedChat.type === "private"
 			? privateMessages[selectedChat.id] || []
@@ -86,58 +207,160 @@ export const ChatWindow: React.FC = () => {
 	if (!selectedChat) {
 		return (
 			<div className="flex flex-1 items-center justify-center bg-gray-50">
-				<p className="text-gray-500">Select a chat to start messaging</p>
+				<div className="text-center">
+					<h3 className="text-xl font-semibold text-gray-700">
+						Welcome to Chat
+					</h3>
+					<p className="text-gray-500 mt-2">
+						Select a conversation to start messaging
+					</p>
+				</div>
 			</div>
 		);
 	}
 
 	return (
 		<div className="flex flex-1 flex-col bg-gray-50">
-			<div className="flex-1 overflow-y-auto p-4">
-				<div className="space-y-4">
-					{messages.map((message) => (
+			{/* Chat Header */}
+			<div className="flex items-center justify-between px-6 py-4 bg-white border-b">
+				<div className="flex items-center space-x-4">
+					<img
+						src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || '')}`}
+						alt="Chat avatar"
+						className="w-10 h-10 rounded-full"
+					/>
+					<div>
+						<h2 className="font-semibold text-gray-900">{displayName}</h2>
+						<p className="text-sm text-gray-500">
+							{selectedChat.type === 'private' 
+								? 'Online' 
+								: `${groupMembers.length} members`}
+						</p>
+					</div>
+				</div>
+				<div className="flex items-center space-x-4">
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => setShowSettings(true)}
+					>
+						<Settings className="h-5 w-5" />
+					</Button>
+				</div>
+			</div>
+
+			{/* Messages Area */}
+			<div className="flex-1 overflow-y-auto p-6 space-y-4">
+				{messages.map((message) => (
+					<div
+						key={message.messageId}
+						className={`flex ${
+							message.senderId === Number(userId)
+								? "justify-end"
+								: "justify-start"
+						}`}
+					>
 						<div
-							key={message.messageId}
-							className={`flex ${
+							className={`flex items-end space-x-2 max-w-[70%] ${
 								message.senderId === Number(userId)
-									? "justify-end"
-									: "justify-start"
+									? "flex-row-reverse space-x-reverse"
+									: ""
 							}`}
 						>
+							{message.senderId !== Number(userId) && (
+								<img
+									src={`https://ui-avatars.com/api/?name=${message.senderName}`}
+									alt={message.senderName}
+									className="w-8 h-8 rounded-full"
+								/>
+							)}
 							<div
-								className={`max-w-[70%] rounded-lg px-4 py-2 ${
+								className={`relative rounded-2xl px-4 py-2 ${
 									message.senderId === Number(userId)
-										? "bg-blue-500 text-white"
+										? "bg-indigo-600 text-white"
 										: "bg-white text-gray-900"
 								}`}
 							>
 								{message.senderId !== Number(userId) && (
-									<p className="mb-1 text-xs font-medium">
+									<p className="text-xs font-medium mb-1">
 										{message.senderName}
 									</p>
 								)}
-								<p>{message.messageContent}</p>
-								{message.imageContent && (
-									<img
-										src={message.imageContent}
-										alt="Message attachment"
-										className="mt-2 max-h-60 rounded-lg"
-									/>
+
+								{editingMessageId === message.messageId ? (
+									<div className="flex items-center gap-2">
+										<input
+											type="text"
+											value={editContent}
+											onChange={(e) => setEditContent(e.target.value)}
+											className="rounded px-2 py-1 text-black text-sm w-full"
+											autoFocus
+										/>
+										<button
+											onClick={() =>
+												handleEditMessage(message.messageId, editContent)
+											}
+											className="text-xs bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1"
+										>
+											Save
+										</button>
+										<button
+											onClick={() => setEditingMessageId(null)}
+											className="text-xs bg-gray-500 hover:bg-gray-600 text-white rounded px-2 py-1"
+										>
+											<X size={12} />
+										</button>
+									</div>
+								) : (
+									<>
+										<p className="text-sm">{message.messageContent}</p>
+										{message.imageContent && (
+											<img
+												src={URL.createObjectURL(message.imageContent)}
+												alt="Message attachment"
+												className="mt-2 max-h-60 rounded-lg"
+											/>
+										)}
+									</>
 								)}
-								<p className="mt-1 text-xs opacity-75">
-									{format(new Date(message.sentAt), "HH:mm")}
-								</p>
+
+								<div className="flex items-center justify-between mt-1">
+									<p className="text-xs opacity-75">
+										{format(new Date(message.sentAt), "HH:mm")}
+									</p>
+
+									{message.senderId === Number(userId) && !editingMessageId && (
+										<div className="flex gap-2 ml-2">
+											<button
+												onClick={() => {
+													setEditingMessageId(message.messageId);
+													setEditContent(message.messageContent);
+												}}
+												className="opacity-75 hover:opacity-100 transition-opacity"
+											>
+												<Edit2 size={14} />
+											</button>
+											<button
+												onClick={() => handleDeleteMessage(message.messageId)}
+												className="opacity-75 hover:opacity-100 transition-opacity"
+											>
+												<Trash2 size={14} />
+											</button>
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
-					))}
-					<div ref={messagesEndRef} />
-				</div>
+					</div>
+				))}
+				<div ref={messagesEndRef} />
 			</div>
 
-			<form onSubmit={handleSubmit(onSubmit)} className="border-t bg-white p-4">
-				<div className="flex space-x-2">
-					<label className="flex cursor-pointer items-center justify-center rounded-lg bg-gray-100 px-4 hover:bg-gray-200">
-						<Image className="h-5 w-5 text-gray-500" />
+			{/* Message Input */}
+			<form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-white border-t">
+				<div className="flex items-center space-x-4">
+					<label className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors">
+						<Image className="h-5 w-10 text-gray-600" />
 						<input
 							type="file"
 							className="hidden"
@@ -147,11 +370,15 @@ export const ChatWindow: React.FC = () => {
 					</label>
 					<Input
 						{...register("content")}
-						placeholder="Type a message..."
-						className="flex-1"
+						placeholder="Type your message..."
+						className="flex-1 py-3"
 					/>
-					<Button type="submit" disabled={isSubmitting}>
-						<Send className="h-5 w-5" />
+					<Button
+						type="submit"
+						disabled={isSubmitting}
+						className="w-10 h-10 rounded-full p-0 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700"
+					>
+						<Send className="h-5 w-10 text-white" />
 					</Button>
 				</div>
 			</form>

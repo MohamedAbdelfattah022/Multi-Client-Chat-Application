@@ -18,15 +18,56 @@
 
 ## About 
 
-This Project is a Multi-client chat application designed to provide realtime communication between multiple users. The application enables both private and group messaging, ensuring an efficient and user friendly experience.
+This Project is a Multi-client chat application designed to provide real-time communication between multiple users. Built with .NET for the backend and React for the frontend, it enables both private and group messaging.
+
 
 ## Features
+- 👥 User Authentication (Register/Login/Logout)
+- 💬 Real-time Private Messaging
+- 👥 Group Chat Support
+- 👥 Friend Request System
+- 🔍 Contact Search
+- 📝 Message Management (Edit/Delete)
+- 🖼️ Profile Picture Support
+- 🔄 Real-time Message Updates
+- 🔐 Secure Communication
 
 ## Technologies
+### Backend
+- ASP.NET Core 9.0
+- SignalR for real-time communication
+- SQL Server for database
+- Entity Framework Core
+
+### Frontend
+- React + TypeScript
+- Tailwind CSS for styling
+- Vite as build tool
 
 ## Requirements
+To run this project, you need:
+
+- Node.js (Latest LTS version)
+- .NET SDK 9.0
+- SQL Server
+- Visual Studio 2022 or Visual Studio Code
+- Git
 
 ## Starting
+```bash
+# Clone this project
+git clone https://github.com/MohamedAbdelfattah022/Multi-Client-Chat-Application.git
+
+# Server
+cd server
+dotnet restore
+dotnet run
+
+# Client
+cd client
+npm install
+npm run dev
+```
 
 ## License
 

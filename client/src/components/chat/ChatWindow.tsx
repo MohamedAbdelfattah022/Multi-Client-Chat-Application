@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Image, Settings, Edit2, Trash2, X } from "lucide-react";
+import { Send, Image, Info, Edit2, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { useChatStore } from "../../stores/chatStore";
@@ -20,6 +20,79 @@ interface MessageFormData {
 	image?: FileList;
 }
 
+interface GroupInfoModalProps {
+	isOpen: boolean;
+	onClose: () => void;
+	group: Group | undefined;
+	members: Array<{
+		userId: number;
+		name: string;
+		profilePic: string | null;
+		isAdmin: boolean;
+	}>;
+}
+
+const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
+	isOpen,
+	onClose,
+	group,
+	members,
+}) => {
+	if (!isOpen || !group) return null;
+
+	return (
+		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+			<div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto">
+				<div className="flex justify-between items-center mb-4">
+					<h2 className="text-xl font-semibold">Group Info</h2>
+					<button
+						onClick={onClose}
+						className="text-gray-500 hover:text-gray-700"
+					>
+						<X className="h-6 w-6" />
+					</button>
+				</div>
+
+				<div className="space-y-4">
+					<div>
+						<h3 className="font-medium mb-2">Group Name</h3>
+						<p className="text-gray-600">{group.groupName}</p>
+					</div>
+
+					<div>
+						<h3 className="font-medium mb-2">Members ({members.length})</h3>
+						<div className="space-y-2">
+							{members.map((member) => (
+								<div
+									key={member.userId}
+									className="flex items-center space-x-2"
+								>
+									<img
+										src={
+											member.profilePic ||
+											`https://ui-avatars.com/api/?name=${encodeURIComponent(
+												member.name
+											)}`
+										}
+										alt={member.name}
+										className="w-8 h-8 rounded-full"
+									/>
+									<span>{member.name}</span>
+									{member.isAdmin && (
+										<span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+											Admin
+										</span>
+									)}
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+};
+
 export const ChatWindow: React.FC = () => {
 	const {
 		selectedChat,
@@ -37,16 +110,18 @@ export const ChatWindow: React.FC = () => {
 
 	const { userId } = useAuthStore();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const [showSettings, setShowSettings] = useState(false);
+	const [showInfo, setShowInfo] = useState(false);
 	const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
 	const [editContent, setEditContent] = useState("");
 
-	const [groupMembers, setGroupMembers] = useState<Array<{
-		userId: number;
-		name: string;
-		profilePic: string | null;
-		isAdmin: boolean;
-	}>>([]);
+	const [groupMembers, setGroupMembers] = useState<
+		Array<{
+			userId: number;
+			name: string;
+			profilePic: string | null;
+			isAdmin: boolean;
+		}>
+	>([]);
 
 	useEffect(() => {
 		const fetchGroupMembers = async () => {
@@ -221,27 +296,31 @@ export const ChatWindow: React.FC = () => {
 			<div className="flex items-center justify-between px-6 py-4 bg-white border-b">
 				<div className="flex items-center space-x-4">
 					<img
-						src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || '')}`}
+						src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+							displayName || ""
+						)}`}
 						alt="Chat avatar"
 						className="w-10 h-10 rounded-full"
 					/>
 					<div>
 						<h2 className="font-semibold text-gray-900">{displayName}</h2>
 						<p className="text-sm text-gray-500">
-							{selectedChat.type === 'private' 
-								? 'Online' 
+							{selectedChat.type === "private"
+								? "Online"
 								: `${groupMembers.length} members`}
 						</p>
 					</div>
 				</div>
 				<div className="flex items-center space-x-4">
-					<Button
-						variant="secondary"
-						size="sm"
-						onClick={() => setShowSettings(true)}
-					>
-						<Settings className="h-5 w-5" />
-					</Button>
+					{selectedChat.type === "group" && (
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={() => setShowInfo(true)}
+						>
+							<Info className="h-5 w-5" />
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -378,6 +457,14 @@ export const ChatWindow: React.FC = () => {
 					</Button>
 				</div>
 			</form>
+			<GroupInfoModal
+				isOpen={showInfo}
+				onClose={() => setShowInfo(false)}
+				group={
+					selectedChat?.type === "group" ? (currentChat as Group) : undefined
+				}
+				members={groupMembers}
+			/>
 		</div>
 	);
 };

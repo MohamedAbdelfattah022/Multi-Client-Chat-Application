@@ -85,6 +85,22 @@ namespace server.Controllers
             return Ok(messages);
         }
 
+        [HttpGet("getGroupMembers/{groupId:int}")]
+        [Authorize]
+        public async Task<ActionResult> GetGroupMembers(int groupId) {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var members = await dbContext.GroupMembers
+                .Where(m => m.GroupId == groupId)
+                .Select(m => new {
+                    m.UserId,
+                    m.User.Name,
+                    m.User.ProfilePic,
+                    m.IsAdmin
+                }).ToListAsync();
+            if (!members.Any()) return NotFound("No members found for this group");
+            return Ok(members);
+        }
+
         [HttpPost("createGroup")]
         [Authorize]
         public async Task<ActionResult> CreateGroup(CreateGroupDto createGroupDto) {

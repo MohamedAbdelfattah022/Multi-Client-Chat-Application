@@ -2,6 +2,7 @@ import { create } from "zustand";
 import api from "../lib/axios";
 import type { Message, User, Group } from "../types";
 import { useAuthStore } from "./authStore";
+import { signalRService } from "../services/SignalRService";
 
 interface ChatState {
 	friends: User[];
@@ -25,9 +26,39 @@ interface ChatState {
 	) => Promise<void>;
 	setSelectedChat: (type: "private" | "group", id: number) => void;
 	addFriend: (friendId: number) => Promise<void>;
+	initializeSignalR: (userId: string) => Promise<void>;
+	disconnectSignalR: (userId: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
+	initializeSignalR: async (userId: string) => {
+		await signalRService.start(userId.toString());
+
+		signalRService.onMessage((message) => {
+			const state = get();
+			if (message.senderId && message.recipientId) {
+				const chatId =
+					message.senderId === Number(userId)
+						? message.recipientId
+						: message.senderId;
+
+				const existingMessages = state.privateMessages[chatId] || [];
+				if (!existingMessages.some((m) => m.messageId === message.messageId)) {
+					set({
+						privateMessages: {
+							...state.privateMessages,
+							[chatId]: [...existingMessages, message],
+						},
+					});
+				}
+			}
+		});
+	},
+
+	disconnectSignalR: async (userId: string) => {
+		await signalRService.stop(userId);
+	},
+
 	friends: [],
 	groups: [],
 	privateMessages: {},
@@ -36,14 +67,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
 	loadFriends: async () => {
 		const { userId } = useAuthStore.getState();
-		console.log("Current userId:", userId);
 		if (!userId) return;
 
 		try {
 			const response = await api.get<User[]>(
 				`/Friendship/getFriends/${userId}`
 			);
-			console.log("Friends response:", response.data);
 			set({ friends: response.data });
 		} catch (error) {
 			console.error("Failed to load friends:", error);
@@ -124,7 +153,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 					"Content-Type": "application/json",
 				},
 			});
-			await get().loadPrivateMessages(recipientId);
+			// await get().loadPrivateMessages(recipientId);
 		} catch (error) {
 			console.error("Failed to send private message:", error);
 		}
@@ -144,13 +173,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
 		try {
 			await api.post("/Group/sendGroupMessage", formData);
-			await get().loadGroupMessages(groupId);
+			// await get().loadGroupMessages(groupId);
 		} catch (error) {
 			console.error("Failed to send group message:", error);
 		}
 	},
 
 	setSelectedChat: (type: "private" | "group", id: number) => {
+		const { userId } = useAuthStore.getState();
+		if (!userId) return;
+		if (type === "private") {
+			signalRService.initializePrivateChat(userId.toString(), id.toString());
+		}
 		set({ selectedChat: { type, id } });
 	},
 
@@ -159,13 +193,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		if (!userId) return;
 
 		try {
-			await api.post('/Friendship/addFriend', {
+			await api.post("/Friendship/addFriend", {
 				userId: userId,
-				friendId: friendId
+				friendId: friendId,
 			});
 			await get().loadFriends(); // Reload friends list after adding
 		} catch (error) {
-			console.error('Failed to add friend:', error);
+			console.error("Failed to add friend:", error);
 		}
-	}
+	},
 }));

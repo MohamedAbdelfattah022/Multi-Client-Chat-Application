@@ -89,15 +89,14 @@ export const useFriendStore = create<FriendStore>((set) => ({
 
 	loadPendingRequests: async () => {
 		const { userId } = useAuthStore.getState();
-
+		if (!userId) return;
 		try {
 			const response = await api.get<FriendRequest[]>(
 				`/Friendship/getReceivedRequests/${userId}`
 			);
 			set({ pendingRequests: response.data });
 		} catch (error) {
-			console.error("Failed to load pending requests:", error);
-			throw error;
+			set({ pendingRequests: [] });
 		}
 	},
 }));

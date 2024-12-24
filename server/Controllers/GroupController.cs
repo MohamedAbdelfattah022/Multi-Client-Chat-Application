@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.DTO;
+using server.Hubs;
 
 namespace server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GroupController(AppDbContext dbContext) : ControllerBase
+    public class GroupController(AppDbContext dbContext, IHubContext<ChatHub> hubContext) : ControllerBase
     {
 
         [HttpPost("sendGroupMessage")]
@@ -36,6 +38,25 @@ namespace server.Controllers
 
             dbContext.GroupMessages.Add(groupMessage);
             await dbContext.SaveChangesAsync();
+
+            var messageWithDetails = await dbContext.GroupMessages
+                .Include(m => m.Sender)
+                .Include(m => m.Group)
+                .FirstOrDefaultAsync(m => m.GroupMessageId == groupMessage.GroupMessageId);
+
+            var messageResponse = new GroupMessageResponseDto {
+                MessageId = messageWithDetails.GroupMessageId,
+                SenderId = messageWithDetails.SenderId,
+                SenderName = messageWithDetails.Sender.Name,
+                GroupId = messageWithDetails.GroupId,
+                GroupName = messageWithDetails.Group.GroupName,
+                MessageContent = messageWithDetails.MessageContent,
+                ImageContent = messageWithDetails.ImageContent,
+                SentAt = messageWithDetails.SentAt
+            };
+
+            await hubContext.Clients.Group($"group_{messageDto.GroupId}")
+                .SendAsync("ReceiveGroupMessage", messageResponse);
 
             return Ok(new { SentAt = groupMessage.SentAt });
         }

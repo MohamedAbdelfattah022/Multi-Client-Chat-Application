@@ -49,7 +49,7 @@ namespace server.Controllers
                 Audience = jwtOptions.Audience,
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
                 Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(ClaimTypes.Email, loginUser.Email),
+                    //new Claim(ClaimTypes.Email, loginUser.Email),
                     new Claim("TokenId", Guid.NewGuid().ToString()),
                     new Claim("UserId", user.UserId.ToString()),
                 }),

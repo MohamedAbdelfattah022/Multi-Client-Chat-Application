@@ -3,6 +3,7 @@ import api from "../lib/axios";
 import type { Message, User, Group } from "../types";
 import { useAuthStore } from "./authStore";
 import { signalRService } from "../services/SignalRService";
+import { encryptMessage } from "../utils/cryptoUtils";
 
 interface ChatState {
 	friends: User[];
@@ -172,10 +173,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		const { userId } = useAuthStore.getState();
 		if (!userId) return;
 
+		const encryptedContent = encryptMessage(content);
+
 		const formData = new FormData();
 		formData.append("senderId", userId.toString());
 		formData.append("recipientId", String(recipientId));
-		formData.append("messageContent", content);
+		formData.append("messageContent", encryptedContent);
 		if (image) {
 			formData.append("imageContent", image);
 		}
@@ -196,10 +199,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		const { userId } = useAuthStore.getState();
 		if (!userId) return;
 
+		const encryptedContent = encryptMessage(content);
+
 		const formData = new FormData();
 		formData.append("senderId", userId);
 		formData.append("groupId", String(groupId));
-		formData.append("messageContent", content);
+		formData.append("messageContent", encryptedContent);
 		if (image) {
 			formData.append("imageContent", image);
 		}

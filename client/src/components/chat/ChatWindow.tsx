@@ -14,6 +14,7 @@ import {
 	getGroupMembers,
 } from "../../services/api";
 import { Group, User } from "../../types";
+import { decryptMessage } from "../../utils/cryptoUtils";
 
 interface MessageFormData {
 	content: string;
@@ -388,7 +389,10 @@ export const ChatWindow: React.FC = () => {
 									</div>
 								) : (
 									<>
-										<p className="text-sm">{message.messageContent}</p>
+										<p className="text-sm">
+											{decryptMessage(message.messageContent)}{" "}
+											{/* Decrypt the message */}
+										</p>
 										{message.imageContent && (
 											<img
 												src={URL.createObjectURL(message.imageContent)}

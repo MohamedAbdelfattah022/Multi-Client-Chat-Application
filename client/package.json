@@ -13,6 +13,7 @@
     "@microsoft/signalr": "^8.0.0",
     "axios": "^1.6.7",
     "clsx": "^2.1.0",
+    "crypto-js": "^4.2.0",
     "date-fns": "^3.3.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.344.0",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

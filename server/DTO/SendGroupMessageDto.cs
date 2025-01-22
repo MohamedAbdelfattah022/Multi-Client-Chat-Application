@@ -7,9 +7,9 @@ namespace server.DTO
         [Required]
         public int SenderId { get; set; }
         public int GroupId { get; set; }
-        [Required]
+
         [RegularExpression(@"^[^<>{}]*$")]
-        public string MessageContent { get; set; }
-        public byte[]? ImageContent { get; set; }
+        public string? MessageContent { get; set; }
+        public string? ImagePath { get; set; }
     }
 }

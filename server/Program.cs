@@ -1,5 +1,6 @@
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using server.Data;
@@ -55,6 +56,17 @@ namespace server
 
 
             var app = builder.Build();
+
+            var uploadsFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            if (!Directory.Exists(uploadsFolderPath)) {
+                Directory.CreateDirectory(uploadsFolderPath);
+            }
+
+            app.UseStaticFiles(new StaticFileOptions {
+                FileProvider = new PhysicalFileProvider(uploadsFolderPath),
+                RequestPath = "/Uploads"
+            });
+
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment()) {

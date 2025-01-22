@@ -14,17 +14,49 @@ namespace server.Controllers
     {
         [HttpPost("sendPrivateMessage")]
         [Authorize]
-        public async Task<ActionResult> SendPrivateMessage(SendMessageDto messageDto) {
+        public async Task<ActionResult> SendPrivateMessage([FromForm] SendMessageDto messageDto, IFormFile? imageFile) {
             if (!ModelState.IsValid) return BadRequest("Invalid model");
 
-            if (string.IsNullOrEmpty(messageDto.MessageContent) && messageDto.ImageContent == null)
+            if (string.IsNullOrEmpty(messageDto.MessageContent) && imageFile == null)
                 return BadRequest("Message content cannot be empty.");
+
+            string imagePath = null;
+            if (imageFile != null) {
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension))
+                    return BadRequest("Invalid file type. Only JPG, JPEG, PNG, and GIF are allowed.");
+
+                var maxFileSize = 5 * 1024 * 1024;
+                if (imageFile.Length > maxFileSize)
+                    return BadRequest("File size exceeds the limit of 5MB.");
+
+                var sanitizedFileName = Path.GetFileNameWithoutExtension(imageFile.FileName)
+                    .Replace(" ", "_")
+                    .Replace("-", "_")
+                    .Replace("..", "")
+                    .Replace("/", "")
+                    .Replace("\\", "");
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName + fileExtension;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create)) {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                imagePath = Path.Combine("Uploads", uniqueFileName);
+            }
 
             var privateMessage = new PrivateMessage {
                 SenderId = messageDto.SenderId,
                 RecipientId = messageDto.RecipientId,
                 MessageContent = messageDto.MessageContent,
-                ImageContent = messageDto.ImageContent,
+                ImagePath = imagePath,
                 SentAt = DateTime.UtcNow
             };
 
@@ -43,7 +75,7 @@ namespace server.Controllers
                 RecipientId = messageWithUsers.RecipientId,
                 RecipientName = messageWithUsers.Recipient.Name,
                 MessageContent = messageWithUsers.MessageContent,
-                ImageContent = messageWithUsers.ImageContent,
+                ImagePath = messageWithUsers.ImagePath,
                 SentAt = messageWithUsers.SentAt
             };
 
@@ -55,7 +87,6 @@ namespace server.Controllers
 
             return Ok(new { SentAt = privateMessage.SentAt });
         }
-
 
         [HttpGet("getPrivateMessages")]
         [Authorize]
@@ -75,7 +106,7 @@ namespace server.Controllers
                     RecipientId = m.RecipientId,
                     RecipientName = m.Recipient.Name,
                     MessageContent = m.MessageContent,
-                    ImageContent = m.ImageContent,
+                    ImagePath = m.ImagePath,
                     SentAt = m.SentAt
                 })
                 .ToListAsync();
@@ -95,7 +126,7 @@ namespace server.Controllers
                 return NotFound("Private message not found");
 
             message.MessageContent = updateMessageDto.MessageContent ?? message.MessageContent;
-            message.ImageContent = updateMessageDto.ImageContent ?? message.ImageContent;
+            message.ImagePath = updateMessageDto.ImagePath ?? message.ImagePath;
             message.SentAt = DateTime.UtcNow;
 
             await dbContext.SaveChangesAsync();

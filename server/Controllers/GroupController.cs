@@ -15,10 +15,10 @@ namespace server.Controllers
 
         [HttpPost("sendGroupMessage")]
         [Authorize]
-        public async Task<ActionResult> SendGroupMessage(SendGroupMessageDto messageDto) {
+        public async Task<ActionResult> SendGroupMessage([FromForm] SendGroupMessageDto messageDto, IFormFile? imageFile) {
             if (!ModelState.IsValid) return BadRequest("Invalid model");
 
-            if (string.IsNullOrEmpty(messageDto.MessageContent) && messageDto.ImageContent == null)
+            if (string.IsNullOrEmpty(messageDto.MessageContent) && imageFile == null)
                 return BadRequest("Message content cannot be empty.");
 
             var members = dbContext.GroupMembers
@@ -28,11 +28,43 @@ namespace server.Controllers
             if (!members.Contains(messageDto.SenderId))
                 return Unauthorized("You are not a group member");
 
+            string imagePath = null;
+            if (imageFile != null) {
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension))
+                    return BadRequest("Invalid file type. Only JPG, JPEG, PNG, and GIF are allowed.");
+
+                var maxFileSize = 5 * 1024 * 1024;
+                if (imageFile.Length > maxFileSize)
+                    return BadRequest("File size exceeds the limit of 5MB.");
+
+                var sanitizedFileName = Path.GetFileNameWithoutExtension(imageFile.FileName)
+                    .Replace(" ", "_")
+                    .Replace("-", "_")
+                    .Replace("..", "")
+                    .Replace("/", "")
+                    .Replace("\\", "");
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + sanitizedFileName + fileExtension;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create)) {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                imagePath = Path.Combine("Uploads", uniqueFileName);
+            }
+
             var groupMessage = new GroupMessage {
                 SenderId = messageDto.SenderId,
                 GroupId = messageDto.GroupId,
                 MessageContent = messageDto.MessageContent,
-                ImageContent = messageDto.ImageContent,
+                ImagePath = imagePath,
                 SentAt = DateTime.UtcNow
             };
 
@@ -51,7 +83,7 @@ namespace server.Controllers
                 GroupId = messageWithDetails.GroupId,
                 GroupName = messageWithDetails.Group.GroupName,
                 MessageContent = messageWithDetails.MessageContent,
-                ImageContent = messageWithDetails.ImageContent,
+                ImagePath = messageWithDetails.ImagePath,
                 SentAt = messageWithDetails.SentAt
             };
 
@@ -76,7 +108,7 @@ namespace server.Controllers
                     GroupId = m.GroupId,
                     GroupName = m.Group.GroupName,
                     MessageContent = m.MessageContent,
-                    ImageContent = m.ImageContent,
+                    ImagePath = m.ImagePath,
                     SentAt = m.SentAt
                 })
                 .ToListAsync();
@@ -234,7 +266,7 @@ namespace server.Controllers
                 return NotFound("Group message not found");
 
             message.MessageContent = updateMessageDto.MessageContent ?? message.MessageContent;
-            message.ImageContent = updateMessageDto.ImageContent ?? message.ImageContent;
+            message.ImagePath = updateMessageDto.ImagePath ?? message.ImagePath;
             message.SentAt = DateTime.UtcNow;
 
             await dbContext.SaveChangesAsync();

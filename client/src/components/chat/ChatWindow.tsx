@@ -18,7 +18,7 @@ import { decryptMessage } from "../../utils/cryptoUtils";
 
 interface MessageFormData {
 	content: string;
-	image?: FileList;
+	image?: FileList; // For file uploads
 }
 
 interface GroupInfoModalProps {
@@ -393,9 +393,9 @@ export const ChatWindow: React.FC = () => {
 											{decryptMessage(message.messageContent)}{" "}
 											{/* Decrypt the message */}
 										</p>
-										{message.imageContent && (
+										{message.imagePath && (
 											<img
-												src={URL.createObjectURL(message.imageContent)}
+												src={`http://localhost:5271/${message.imagePath}`} // Use the image path from the server
 												alt="Message attachment"
 												className="mt-2 max-h-60 rounded-lg"
 											/>

@@ -178,18 +178,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		const formData = new FormData();
 		formData.append("senderId", userId.toString());
 		formData.append("recipientId", String(recipientId));
-		formData.append("messageContent", encryptedContent);
+		if (encryptedContent) formData.append("messageContent", encryptedContent);
+		else formData.append("messageContent", encryptMessage(""));
+
 		if (image) {
-			formData.append("imageContent", image);
+			formData.append("imageFile", image); // Use `imageFile` for file uploads
 		}
 
 		try {
 			await api.post("/Messages/sendPrivateMessage", formData, {
 				headers: {
-					"Content-Type": "application/json",
+					"Content-Type": "multipart/form-data", // Ensure correct content type
 				},
 			});
-			// await get().loadPrivateMessages(recipientId);
 		} catch (error) {
 			console.error("Failed to send private message:", error);
 		}
@@ -206,12 +207,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		formData.append("groupId", String(groupId));
 		formData.append("messageContent", encryptedContent);
 		if (image) {
-			formData.append("imageContent", image);
+			formData.append("imageFile", image); // Use `imageFile` for file uploads
 		}
 
 		try {
-			await api.post("/Group/sendGroupMessage", formData);
-			// await get().loadGroupMessages(groupId);
+			await api.post("/Group/sendGroupMessage", formData, {
+				headers: {
+					"Content-Type": "multipart/form-data", // Ensure correct content type
+				},
+			});
 		} catch (error) {
 			console.error("Failed to send group message:", error);
 		}

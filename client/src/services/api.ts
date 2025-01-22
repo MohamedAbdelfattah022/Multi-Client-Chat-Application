@@ -220,7 +220,7 @@ export interface SendGroupMessageDto {
 	senderId: number;
 	groupId: number;
 	messageContent: string;
-	imageContent?: string;
+	imageFile?: File;
 }
 
 export interface GetGroupMessagesDto {
@@ -232,7 +232,7 @@ export interface SendMessageDto {
 	senderId: number;
 	recipientId: number;
 	messageContent: string;
-	imageContent?: string;
+	imageFile?: File;
 }
 export interface GetMessagesDto {
 	senderId: number;

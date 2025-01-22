@@ -182,13 +182,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		else formData.append("messageContent", encryptMessage(""));
 
 		if (image) {
-			formData.append("imageFile", image); // Use `imageFile` for file uploads
+			formData.append("imageFile", image);
 		}
 
 		try {
 			await api.post("/Messages/sendPrivateMessage", formData, {
 				headers: {
-					"Content-Type": "multipart/form-data", // Ensure correct content type
+					"Content-Type": "multipart/form-data",
 				},
 			});
 		} catch (error) {
@@ -207,13 +207,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 		formData.append("groupId", String(groupId));
 		formData.append("messageContent", encryptedContent);
 		if (image) {
-			formData.append("imageFile", image); // Use `imageFile` for file uploads
+			formData.append("imageFile", image);
 		}
 
 		try {
 			await api.post("/Group/sendGroupMessage", formData, {
 				headers: {
-					"Content-Type": "multipart/form-data", // Ensure correct content type
+					"Content-Type": "multipart/form-data",
 				},
 			});
 		} catch (error) {
@@ -230,7 +230,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 				userId: userId,
 				friendId: friendId,
 			});
-			await get().loadFriends(); // Reload friends list after adding
+			await get().loadFriends();
 		} catch (error) {
 			console.error("Failed to add friend:", error);
 		}

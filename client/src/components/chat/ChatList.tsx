@@ -18,7 +18,6 @@ const ChatList = ({ chats, contacts, onChatSelect }: ChatListProps) => {
 	const [lastMessages, setLastMessages] = useState<Record<number, string>>({});
 
 	useEffect(() => {
-		// Load last messages for each chat
 		const loadLastMessages = async () => {
 			const currentUserId = parseInt(localStorage.getItem("userId") || "0");
 			if (!currentUserId) return;

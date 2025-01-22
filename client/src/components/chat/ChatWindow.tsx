@@ -18,7 +18,7 @@ import { decryptMessage } from "../../utils/cryptoUtils";
 
 interface MessageFormData {
 	content: string;
-	image?: FileList; // For file uploads
+	image?: FileList;
 }
 
 interface GroupInfoModalProps {
@@ -114,6 +114,7 @@ export const ChatWindow: React.FC = () => {
 	const [showInfo, setShowInfo] = useState(false);
 	const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
 	const [editContent, setEditContent] = useState("");
+	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
 	const [groupMembers, setGroupMembers] = useState<
 		Array<{
@@ -242,24 +243,28 @@ export const ChatWindow: React.FC = () => {
 	}, [privateMessages, groupMessages]);
 
 	const onSubmit = async (data: MessageFormData) => {
-		if (!selectedChat || (!data.content.trim() && !data.image?.[0])) return;
+		if (!selectedChat || (!data.content.trim() && !selectedImage)) return;
 
 		try {
 			if (selectedChat.type === "private") {
 				await sendPrivateMessage(
 					selectedChat.id,
 					data.content,
-					data.image?.[0]
+					selectedImage || undefined
 				);
 			} else {
-				await sendGroupMessage(selectedChat.id, data.content, data.image?.[0]);
+				await sendGroupMessage(
+					selectedChat.id,
+					data.content,
+					selectedImage || undefined
+				);
 			}
 			reset();
+			setSelectedImage(null);
 		} catch (error) {
 			console.error("Failed to send message:", error);
 		}
 	};
-
 	const currentChat =
 		selectedChat?.type === "private"
 			? friends.find((f) => f.userId === selectedChat.id)
@@ -395,7 +400,7 @@ export const ChatWindow: React.FC = () => {
 										</p>
 										{message.imagePath && (
 											<img
-												src={`http://localhost:5271/${message.imagePath}`} // Use the image path from the server
+												src={`http://localhost:5271/${message.imagePath}`}
 												alt="Message attachment"
 												className="mt-2 max-h-60 rounded-lg"
 											/>
@@ -444,9 +449,29 @@ export const ChatWindow: React.FC = () => {
 							type="file"
 							className="hidden"
 							accept="image/*"
-							{...register("image")}
+							onChange={(e) => {
+								if (e.target.files && e.target.files[0]) {
+									setSelectedImage(e.target.files[0]);
+								}
+							}}
 						/>
 					</label>
+					{selectedImage && (
+						<div className="relative">
+							<img
+								src={URL.createObjectURL(selectedImage)}
+								alt="Selected"
+								className="w-20 h-20 object-cover rounded-lg"
+							/>
+							<button
+								type="button"
+								onClick={() => setSelectedImage(null)}
+								className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+							>
+								<X className="h-4 w-4" />
+							</button>
+						</div>
+					)}
 					<Input
 						{...register("content")}
 						placeholder="Type your message..."

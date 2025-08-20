@@ -1,9 +1,5 @@
 <h1 align="center">Multi Client Chat Application</h1>
 
-<h4 align="center"> 
-	🚧  Multi Client Chat Application 🚀 Under construction...  🚧
-</h4> 
-
 <p align="center">
   <a href="#dart-about">About</a> &#xa0; | &#xa0; 
   <a href="#sparkles-features">Features</a> &#xa0; | &#xa0;
